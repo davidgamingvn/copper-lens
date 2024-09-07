@@ -1,0 +1,9 @@
+flask
+flask-cors
+python-dotenv
+langchain
+google-cloud-aiplatform
+google-cloud-storage
+beautifulsoup4
+requests
+pytest

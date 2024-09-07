@@ -1,0 +1,28 @@
+**/.env*
+
+**/.vscode/
+**/.idea/
+*.log
+*.pyc
+__pycache__/
+.DS_Store
+
+# Frontend (Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
+frontend/.vercel
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# Backend (FastAPI)
+backend/venv/
+backend/*.pyc
+backend/__pycache__/
+backend/.DS_Store
+backend/.env
