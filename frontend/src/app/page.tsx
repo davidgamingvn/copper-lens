@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import {
   Popover,
@@ -32,13 +31,13 @@ export default function Home() {
       <header className="flex h-16 items-center px-4">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="mr-4">
+            <Button variant="ghost" size="icon" className="mr-4 hover:bg-primary-foreground hover:text-white">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-            <nav className="flex flex-col space-y-4">
+          <SheetContent side="left" className="w-[300px]">
+            <nav className="flex flex-col space-y-4 pt-6">
               <Link href="#" className="text-lg font-semibold">
                 Dashboard
               </Link>
@@ -66,7 +65,7 @@ export default function Home() {
           <Button
             variant="outline"
             size="icon"
-            className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg"
+            className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg hover:text-white"
           >
             <MessageCircle className="h-6 w-6" />
             <span className="sr-only">Open chat</span>
@@ -86,6 +85,7 @@ export default function Home() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsChatOpen(false)}
+                className="h-8 w-8 rounded-full hover:bg-accent-foreground hover:text-white"
               >
                 <X className="h-4 w-4" />
                 <span className="sr-only">Close chat</span>
@@ -93,7 +93,7 @@ export default function Home() {
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               {chatMessages.map((message, index) => (
-                <div key={index} className="bg-muted mb-2 rounded p-2">
+                <div key={index} className="mb-2 rounded bg-muted p-2">
                   {message}
                 </div>
               ))}
@@ -106,8 +106,8 @@ export default function Home() {
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                 />
-                <Button type="submit" size="icon">
-                  <Send className="h-4 w-4" />
+                <Button type="submit" size="icon" className="hover:bg-accent-foreground hover:text-white">
+                  <Send className="h-4 w-4 text-white" />
                   <span className="sr-only">Send message</span>
                 </Button>
               </div>

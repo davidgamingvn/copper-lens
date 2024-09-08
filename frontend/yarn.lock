@@ -141,6 +141,11 @@
   dependencies:
     glob "10.3.10"
 
+"@next/font@^14.2.8":
+  version "14.2.8"
+  resolved "https://registry.yarnpkg.com/@next/font/-/font-14.2.8.tgz#182b54c73a0058a158955f22f985446ac9bf660e"
+  integrity sha512-yQbLs/Sc9PXXsJv3gj5w/2Ubesge+m1VJNH5io8KcxYJfjbJnAywtMvZRUbWX2hyeB/o7Xu1PJKAqbjaBrzDTQ==
+
 "@next/swc-darwin-arm64@14.2.8":
   version "14.2.8"
   resolved "https://registry.yarnpkg.com/@next/swc-darwin-arm64/-/swc-darwin-arm64-14.2.8.tgz#2ecf151cde79d1fc7ebc6d5b6da031abecae6dd4"
