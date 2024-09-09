@@ -3,6 +3,13 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useTheme } from "next-themes";
 import { ScrollArea } from "./ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
+
 import { useEffect, useRef } from "react";
 
 interface ChatInterfaceProps {
@@ -29,14 +36,32 @@ const ChatbotInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-zinc-800">
-      <div className="flex items-center justify-between border-b p-4">
-        <h2 className="text-lg font-semibold">AI Chatbot</h2>
+      <div className="flex items-center justify-between border-b p-4 mt-2">
+        <h2 className="text-lg font-semibold">Chatbot</h2>
         <div className="flex space-x-2">
           <Button variant="ghost" size="icon" className="hover:text-primary">
-            <Share className="h-4 w-4" />
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Share className="h-4 w-4" />
+                </TooltipTrigger>
+                <TooltipContent className="bg-transparent p-2 text-foreground">
+                  <p>Share</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </Button>
           <Button variant="ghost" size="icon" className="hover:text-primary">
-            <RefreshCw className="h-4 w-4" />
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <RefreshCw className="h-4 w-4" />
+                </TooltipTrigger>
+                <TooltipContent className="bg-transparent p-2 text-foreground">
+                  <p>Refresh</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </Button>
         </div>
       </div>
