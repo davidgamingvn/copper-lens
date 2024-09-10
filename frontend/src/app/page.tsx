@@ -21,6 +21,7 @@ import { ThemeToggle } from "~/components/theme-toggle";
 import { mockNews } from "~/lib/mocks";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Label } from "~/components/ui/label";
+import Image from "next/image";
 export default function Home() {
   const [chatMessages, setChatMessages] = useState<string[]>([]);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -79,6 +80,12 @@ export default function Home() {
     <div className="flex h-screen flex-col bg-primary">
       <header className="flex h-16 items-center justify-between px-4 text-white">
         <div className="flex items-center space-x-2">
+          <Image
+            src="/assets/brand/logoWhite.svg"
+            alt="logo"
+            width={30}
+            height={30}
+          />
           <h1 className="text-3xl font-bold tracking-wide">CopperLens</h1>
         </div>
         <p className="absolute left-1/2 hidden -translate-x-1/2 transform text-sm italic lg:block">
