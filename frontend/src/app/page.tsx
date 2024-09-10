@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, MessageCircle, ChevronUp } from "lucide-react";
+import { ArrowRight, MessageCircle, ChevronUp, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useMediaQuery } from "react-responsive";
 import { Button } from "~/components/ui/button";
@@ -20,8 +20,10 @@ import {
 import { ThemeToggle } from "~/components/theme-toggle";
 import { mockNews } from "~/lib/mocks";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { Label } from "~/components/ui/label";
 export default function Home() {
   const [chatMessages, setChatMessages] = useState<string[]>([]);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [inputMessage, setInputMessage] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const isLargeScreen = useMediaQuery({ query: "(min-width: 1024px)" });
@@ -37,6 +39,31 @@ export default function Home() {
     if (inputMessage.trim()) {
       setChatMessages([...chatMessages, inputMessage]);
       setInputMessage("");
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+      // For this example, we'll just add the file name to the chat
+      setChatMessages([...chatMessages, `File uploaded: ${file.name}`]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+      // For this example, we'll just add the file name to the chat
+      setChatMessages([...chatMessages, `File uploaded: ${file.name}`]);
     }
   };
 
@@ -68,10 +95,36 @@ export default function Home() {
             <h2 className="mb-4 text-xl font-semibold">Help us stay update!</h2>
             <Card className="mb-6 dark:bg-zinc-800">
               <CardContent className="p-4">
-                <p className="mb-2 text-center">
-                  Upload a file or drag and drop it here
-                </p>
-                <p className="mb-4 text-center text-sm text-gray-500">
+                <div
+                  className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                >
+                  <Label htmlFor="file-upload" className="cursor-pointer">
+                    <Input
+                      id="file-upload"
+                      type="file"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                    <div className="flex flex-col items-center">
+                      <Upload className="h-12 w-12 text-gray-400" />
+                      <p className="mt-2 text-sm text-gray-500">
+                        <span className="font-semibold">Click to upload</span>{" "}
+                        or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        PDF, DOC, TXT up to 10MB
+                      </p>
+                    </div>
+                  </Label>
+                </div>
+                {uploadedFile && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    Uploaded file: {uploadedFile.name}
+                  </p>
+                )}
+                <p className="mb-2 mt-4 text-center text-sm text-gray-500">
                   OR with
                 </p>
                 <div className="flex">
@@ -144,12 +197,13 @@ export default function Home() {
             </ScrollArea>
           </div>
         </ResizablePanel>
-        <ResizableHandle />
+        <ResizableHandle className="border-none" />
         {isLargeScreen ? (
-          <ResizablePanel defaultSize={20}>
+          <ResizablePanel defaultSize={25} minSize={20} className="shadow-md">
             <ChatInterface
               chatMessages={chatMessages}
               inputMessage={inputMessage}
+              setChatMessages={setChatMessages}
               setInputMessage={setInputMessage}
               handleSendMessage={handleSendMessage}
             />
@@ -170,6 +224,7 @@ export default function Home() {
                 <ChatInterface
                   chatMessages={chatMessages}
                   inputMessage={inputMessage}
+                  setChatMessages={setChatMessages}
                   setInputMessage={setInputMessage}
                   handleSendMessage={handleSendMessage}
                 />
