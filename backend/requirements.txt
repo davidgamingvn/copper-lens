@@ -7,4 +7,5 @@ google-cloud-aiplatform
 google-cloud-storage
 beautifulsoup4
 requests
+pinecone
 pytest

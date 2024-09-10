@@ -4,6 +4,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 from PyPDF2 import PdfReader
@@ -46,33 +47,38 @@ def extract_text_from_pdf(pdf_file):
         text += page.extract_text() + '\n'
     return text
 
-def update_matching_engine(pdf_file):
-    # Extract text from PDF
-    text = extract_text_from_pdf(pdf_file)
+def generate_embeddings(text):
     # Split text into chunks
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks = text_splitter.split_text(text)
 
-    try:
-        # Generate embeddings for each chunk
-        vectors = embedding_model.embed_documents(chunks)
-        print(len(vectors))
-        print('finish embedding')
-    except Exception as e:
-        print('not embedding: ', e)
+    # Generate embeddings for each chunk
+    vectors = embedding_model.embed_documents(chunks)
+    print(len(vectors))
+    print('finish embedding')
 
-    resume_index = pinecone.Index(index_name)
+    return vectors, chunks
+
+def update_matching_engine(pdf_file, filename):
+    # Extract text from PDF
+    text = extract_text_from_pdf(pdf_file)
+    
+    vectors, chunks = generate_embeddings(text)
+
     # Create upsert vector
     upsert_vectors = [
         {
-            "id": f"vec{i}", 
+            # "id": f"vec{i}", 
             "values": vector,
-            "metadata": {"text": chunk}
+            "metadata": {
+                "text": chunk,
+                "filename": filename
+            }
         }
         for i, (vector, chunk) in enumerate(zip(vectors, chunks))
     ]
-    resume_index.upsert(vectors=upsert_vectors, namespace="sparkchallenge")
-    print(resume_index.describe_index_stats())
+    sparkchallenge_index.upsert(vectors=upsert_vectors, namespace="sparkchallenge")
+    print(sparkchallenge_index.describe_index_stats())
 
 def get_qa_chain():
     # Create a prompt template
@@ -99,7 +105,7 @@ def get_qa_chain():
 
     # Initialize the conversational model
     model = ChatGoogleGenerativeAI(
-        model="gemini-1.5-pro", temperature=0.7, max_tokens=500
+        model="gemini-1.5-pro", temperature=0.6, max_tokens=500
     )
 
     # Initialize the conversational retrieval chain
@@ -118,6 +124,25 @@ def get_qa_chain():
 
     return chain
 
+
+def filter_text(text):
+    # load the model
+    llm = ChatGoogleGenerativeAI(model='gemini-pro', temperature=0.4)
+
+    # set up a prompt
+    prompt = PromptTemplate(
+        input_variables=['text'],
+        template=''' I have this text: {text}.
+            I want to filter the text and get the most relevant information about Arizona mining industry, 
+            environment, toxic chemical, water usage, electricity usage, energy consumption from it.
+            Simply return the answer only, do not include the question in the response.'''
+    )
+
+    # create a chain
+    chain = LLMChain(llm=llm, prompt=prompt, verbose=True)
+    response = chain.invoke(input={'text': text})
+    return response['text']
+
 def web_scraping(url):
     # Send a GET request to the URL
     response = requests.get(url)
@@ -126,33 +151,39 @@ def web_scraping(url):
     if response.status_code == 200:
         # Parse the content using BeautifulSoup
         soup = BeautifulSoup(response.content, 'html.parser')
-        
-        div_tag = soup.find_all('div', {'class': 'show-more-less-html__markup show-more-less-html__markup--clamp-after-5 relative overflow-hidden'})
-        for p_tag in div_tag:
-            text = p_tag.get_text(strip=True)
-        
-        # Split text into chunks
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        chunks = text_splitter.split_text(text)
 
-        # Generate embeddings for each chunk
-        vectors = embedding_model.embed_documents(chunks)
-        print(len(vectors))
-        print('finish embedding')
+        # Extract title
+        title = soup.title.string
+        
+        p_tags = soup.find_all('p')
+        for p_tag in p_tags:
+            text = text + ' ' + p_tag.get_text(strip=True)
+
+        # Filter through LLM to get relavanet information
+        text = filter_text(text)
+        
+        vectors, chunks = generate_embeddings(text)
 
         # Create upsert vector
         upsert_vectors = [
             {
-                "id": f"vec{i}",
+                # "id": f"vec{i}",
                 "values": vector,
-                "metadata": {"text": chunk}
+                "metadata": {
+                    "text": chunk,
+                    "title": title,
+                    "url": url
+                }
             }
             for i, (vector, chunk) in enumerate(zip(vectors, chunks))
         ]
 
         sparkchallenge_index.upsert(vectors=upsert_vectors, namespace="sparkchallenge")
-        # print(resume_index.describe_index_stats())
+        # print(sparkchallenge_index.describe_index_stats())
         
         return f"Success Scraping: {response.status_code}"
     else:
         return f"Error: {response.status_code}"
+
+def infomation_summarize():
+    pass
