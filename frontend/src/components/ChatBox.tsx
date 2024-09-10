@@ -15,7 +15,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ message, index, scrollRef }) => {
         className={`max-w-[75%] rounded-2xl p-3 ${
           index % 2 === 0
             ? "bg-accent dark:bg-slate-700"
-            : "dark:bg-primary-700 bg-primary text-white"
+            : "bg-primary text-white dark:bg-primary-700"
         }`}
         ref={scrollRef}
       >

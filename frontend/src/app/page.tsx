@@ -18,12 +18,13 @@ import {
   ResizablePanelGroup,
 } from "~/components/ui/resizable";
 import { ThemeToggle } from "~/components/theme-toggle";
-import { mockNews } from "~/lib/mocks";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Label } from "~/components/ui/label";
 import Image from "next/image";
+import { useStore } from "./store";
+
 export default function Home() {
-  const [chatMessages, setChatMessages] = useState<string[]>([]);
+  const { chatMessages, news, addMessage } = useStore();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [inputMessage, setInputMessage] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -38,7 +39,7 @@ export default function Home() {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputMessage.trim()) {
-      setChatMessages([...chatMessages, inputMessage]);
+      addMessage(inputMessage);
       setInputMessage("");
     }
   };
@@ -48,7 +49,7 @@ export default function Home() {
     if (file) {
       setUploadedFile(file);
       // For this example, we'll just add the file name to the chat
-      setChatMessages([...chatMessages, `File uploaded: ${file.name}`]);
+      addMessage(`File uploaded: ${file.name}`);
     }
   };
 
@@ -64,7 +65,7 @@ export default function Home() {
     if (file) {
       setUploadedFile(file);
       // For this example, we'll just add the file name to the chat
-      setChatMessages([...chatMessages, `File uploaded: ${file.name}`]);
+      addMessage(`File uploaded: ${file.name}`);
     }
   };
 
@@ -147,7 +148,7 @@ export default function Home() {
             </Card>
             <h2 className="mb-4 text-xl font-semibold">Latest News</h2>
             <ScrollArea className="h-[25rem] w-full">
-              {mockNews.map((item) => (
+              {news.map((item) => (
                 <Card key={item.id} className="mb-4 overflow-hidden">
                   <CardContent className="p-0">
                     <div className="flex items-center space-x-4 bg-accent p-4">
@@ -207,13 +208,7 @@ export default function Home() {
         <ResizableHandle className="border-none" />
         {isLargeScreen ? (
           <ResizablePanel defaultSize={25} minSize={20} className="shadow-md">
-            <ChatInterface
-              chatMessages={chatMessages}
-              inputMessage={inputMessage}
-              setChatMessages={setChatMessages}
-              setInputMessage={setInputMessage}
-              handleSendMessage={handleSendMessage}
-            />
+            <ChatInterface />
           </ResizablePanel>
         ) : (
           <Popover open={isChatOpen} onOpenChange={setIsChatOpen}>
@@ -228,13 +223,7 @@ export default function Home() {
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" side="top" align="end">
               <div className="h-[80vh]">
-                <ChatInterface
-                  chatMessages={chatMessages}
-                  inputMessage={inputMessage}
-                  setChatMessages={setChatMessages}
-                  setInputMessage={setInputMessage}
-                  handleSendMessage={handleSendMessage}
-                />
+                <ChatInterface />
               </div>
             </PopoverContent>
           </Popover>

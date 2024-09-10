@@ -15,26 +15,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import Image from "next/image";
 import { formatFileSize } from "~/lib/utils";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useStore } from "~/app/store";
 import ChatBox from "./ChatBox";
 
-interface ChatInterfaceProps {
-  chatMessages: string[];
-  inputMessage: string;
-  setChatMessages: (value: string[]) => void;
-  setInputMessage: (value: string) => void;
-  handleSendMessage: (e: React.FormEvent) => void;
-}
-
-const ChatbotInterface: React.FC<ChatInterfaceProps> = ({
-  chatMessages,
-  inputMessage,
-  setChatMessages,
-  setInputMessage,
-  handleSendMessage,
-}) => {
+const ChatbotInterface: React.FC = () => {
+  const { chatMessages, addMessage } = useStore();
+  const [inputMessage, setInputMessage] = useState("");
   const { theme } = useTheme();
   const logo =
     theme === "dark"
@@ -43,15 +31,18 @@ const ChatbotInterface: React.FC<ChatInterfaceProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputMessage.trim()) {
+      addMessage(inputMessage);
+      setInputMessage("");
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // For this example, we'll just add the file name to the chat
-      handleSendMessage(e);
-      setChatMessages([
-        ...chatMessages,
-        `File uploaded: (${formatFileSize(file.size)})`,
-      ]);
+      addMessage(`File uploaded: ${file.name} (${formatFileSize(file.size)})`);
     }
   };
 
