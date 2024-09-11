@@ -12,3 +12,5 @@ pinecone-client
 PyPDF2
 PyMuPDF
 pytest
+langchain-pinecone 
+pinecone-notebooks

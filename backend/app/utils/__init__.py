@@ -1,3 +1,5 @@
+import io
+import os
 import google.generativeai as genai
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -9,8 +11,11 @@ from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 from PyPDF2 import PdfReader
 import requests
+import re
 from bs4 import BeautifulSoup
 from config import Config
+from spire.pdf.common import *
+from spire.pdf import *
 
 # Initialize Google Generative AI Embeddings
 genai.configure(api_key=Config.GOOGLE_API_KEY)
@@ -38,7 +43,32 @@ if index_name not in pinecone.list_indexes().names():
 # Initialize Pinecone index
 sparkchallenge_index = pinecone.Index(index_name)
 # Initialize Pinecone vector store
-vector_store = PineconeVectorStore(index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
+vector_store = PineconeVectorStore(
+    index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
+
+
+def extract_images_from_pdf(pdf_file, filename):
+    # Open the PDF file
+    doc = PdfDocument()
+    doc.LoadFromFile(pdf_file)
+
+    images = []
+
+    # Loop through the pages in the document
+    for i in range(doc.Pages.Count):
+        page = doc.Pages.get_Item(i)
+
+        # Extract images from a specific page
+        for image in page.ExtractImages():
+            images.append(image)
+
+    index = 0
+    for image in images:
+        imageFileName = 'images/Image-{0:d}.png'.format(index)
+        index += 1
+        image.Save(imageFileName, ImageFormat.get_Png())
+    doc.Close()
+
 
 def extract_text_from_pdf(pdf_file):
     pdf_reader = PdfReader(pdf_file)
@@ -47,9 +77,11 @@ def extract_text_from_pdf(pdf_file):
         text += page.extract_text() + '\n'
     return text
 
+
 def generate_embeddings(text):
     # Split text into chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000, chunk_overlap=200)
     chunks = text_splitter.split_text(text)
 
     # Generate embeddings for each chunk
@@ -59,16 +91,19 @@ def generate_embeddings(text):
 
     return vectors, chunks
 
+
 def update_matching_engine(pdf_file, filename):
     # Extract text from PDF
     text = extract_text_from_pdf(pdf_file)
-    
+    # Extract images from PDF
+    extract_images_from_pdf(pdf_file, filename)
+
     vectors, chunks = generate_embeddings(text)
 
     # Create upsert vector
     upsert_vectors = [
         {
-            # "id": f"vec{i}", 
+            "id": f"{filename}_{i}",
             "values": vector,
             "metadata": {
                 "text": chunk,
@@ -77,8 +112,10 @@ def update_matching_engine(pdf_file, filename):
         }
         for i, (vector, chunk) in enumerate(zip(vectors, chunks))
     ]
-    sparkchallenge_index.upsert(vectors=upsert_vectors, namespace="sparkchallenge")
+    sparkchallenge_index.upsert(
+        vectors=upsert_vectors, namespace="sparkchallenge")
     print(sparkchallenge_index.describe_index_stats())
+
 
 def get_qa_chain():
     # Create a prompt template
@@ -92,7 +129,7 @@ def get_qa_chain():
     {chat_history}
     
     Answer:"""
-    
+
     prompt = PromptTemplate(
         input_variables=["context", "question", "chat_history"],
         template=prompt_template
@@ -114,7 +151,7 @@ def get_qa_chain():
         retriever=vector_store.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={
-                "k": 10, 
+                "k": 10,
                 "score_threshold": 0.1,
             },
         ),
@@ -132,21 +169,26 @@ def filter_text(text):
     # set up a prompt
     prompt = PromptTemplate(
         input_variables=['text'],
-        template=''' I have this text: {text}.
-            I want to filter the text and get the most relevant information about Arizona mining industry, 
-            environment, toxic chemical, water usage, electricity usage, energy consumption from it.
-            Simply return the answer only, do not include the question in the response.'''
+        template=''' You are given this text:"{text}".
+            I want to filter out only the information between <p> and </p> from the text.
+            Please filter out the information and provide me with the filtered information.
+        '''
     )
 
     # create a chain
-    chain = LLMChain(llm=llm, prompt=prompt, verbose=True)
+    chain = LLMChain(llm=llm, prompt=prompt, verbose=False)
     response = chain.invoke(input={'text': text})
     return response['text']
+
+
+def remove_non_ascii(text):
+    return ''.join(i for i in text if ord(i) < 128)
+
 
 def web_scraping(url):
     # Send a GET request to the URL
     response = requests.get(url)
-    
+
     # Check if the request was successsful
     if response.status_code == 200:
         # Parse the content using BeautifulSoup
@@ -154,20 +196,24 @@ def web_scraping(url):
 
         # Extract title
         title = soup.title.string
-        
-        p_tags = soup.find_all('p')
-        for p_tag in p_tags:
-            text = text + ' ' + p_tag.get_text(strip=True)
+        # Remove non-ascii characters
+        title = re.sub(r'[^\x00-\x7F]+', '', title)
+        # Scrape the main content
+        tags = soup.find_all('div', {'class': 'main-content'})
+        text = ""
+        for tag in tags:
+            text = text + ' ' + tag.get_text(strip=True)
 
         # Filter through LLM to get relavanet information
         text = filter_text(text)
-        
+
         vectors, chunks = generate_embeddings(text)
 
+        print(title)
         # Create upsert vector
         upsert_vectors = [
             {
-                # "id": f"vec{i}",
+                "id": f"{title}_{i}",
                 "values": vector,
                 "metadata": {
                     "text": chunk,
@@ -178,12 +224,14 @@ def web_scraping(url):
             for i, (vector, chunk) in enumerate(zip(vectors, chunks))
         ]
 
-        sparkchallenge_index.upsert(vectors=upsert_vectors, namespace="sparkchallenge")
+        sparkchallenge_index.upsert(
+            vectors=upsert_vectors, namespace="sparkchallenge")
         # print(sparkchallenge_index.describe_index_stats())
-        
+
         return f"Success Scraping: {response.status_code}"
     else:
         return f"Error: {response.status_code}"
+
 
 def infomation_summarize():
     pass
