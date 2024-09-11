@@ -8,4 +8,7 @@ google-cloud-storage
 beautifulsoup4
 requests
 pinecone
+pinecone-client
+PyPDF2
+PyMuPDF
 pytest
