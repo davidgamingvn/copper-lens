@@ -8,9 +8,11 @@ from langchain.chains import LLMChain
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 from PyPDF2 import PdfReader
+from spire.pdf.common import *
+from spire.pdf import *
 import requests
-import fitz
 import re
+import os
 from bs4 import BeautifulSoup
 from config import Config
 
@@ -42,38 +44,28 @@ sparkchallenge_index = pinecone.Index(index_name)
 # Initialize Pinecone vector store
 vector_store = PineconeVectorStore(index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
 
-
 def extract_images_from_pdf(pdf_file, filename):
-    # Open the PDF file
-    pdf_document = fitz.open(pdf_file)
+    doc = PdfDocument()
+    doc.LoadFromFile(pdf_file)
 
-    # Iterate over each page in the PDF file
-    for page_number in range(pdf_document.page_count):
-        # Get the page
-        page = pdf_document[page_number]
+    # Create a PdfImageHelper object
+    image_helper = PdfImageHelper()
+    index = 0
 
-        # Get the images on the page
-        images = page.get_images(full=True)
+    output_dir = "./images"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-        # Iterate over each image on the page
-        for image_index, image in enumerate(images):
-            # Get the XREF of the image
-            xref = image[0]
+    for i in range(doc.Pages.Count):
+        images_info = image_helper.GetImagesInfo(doc.Pages[i])
+        # Get the images and save them as image files
+        for j in range(len(images_info)):
+            image_info = images_info[j]
+            output_file = os.path.join(output_dir, f"{filename}_{index}.png")
+            image_info.Image.Save(output_file)
+            index += 1
 
-            # Extract the image bytes
-            base_image = pdf_document.extract_image(xref)
-            image_bytes = base_image["image"]
-
-            # Get the image extension
-            image_ext = base_image["ext"]
-
-            # Save the image to a file
-            image_name = f"{filename}_page_{page_number}_image_{image_index}.png"
-            with open(image_name, "wb") as image_file:
-                image_file.write(image_bytes)
-
-    # Close the PDF file
-    pdf_document.close()
+    doc.Close()
 
 def extract_text_from_pdf(pdf_file):
     pdf_reader = PdfReader(pdf_file)
