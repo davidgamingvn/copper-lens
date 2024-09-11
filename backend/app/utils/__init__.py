@@ -10,8 +10,11 @@ from langchain.chains import LLMChain
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 from PyPDF2 import PdfReader
+from spire.pdf.common import *
+from spire.pdf import *
 import requests
 import re
+import os
 from bs4 import BeautifulSoup
 from config import Config
 from spire.pdf.common import *
@@ -46,8 +49,8 @@ sparkchallenge_index = pinecone.Index(index_name)
 vector_store = PineconeVectorStore(
     index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
 
-
 def extract_images_from_pdf(pdf_file, filename):
+<<<<<<< HEAD:backend/app/utils/__init__.py
     # Open the PDF file
     doc = PdfDocument()
     doc.LoadFromFile(pdf_file)
@@ -69,6 +72,29 @@ def extract_images_from_pdf(pdf_file, filename):
         image.Save(imageFileName, ImageFormat.get_Png())
     doc.Close()
 
+=======
+    doc = PdfDocument()
+    doc.LoadFromFile(pdf_file)
+
+    # Create a PdfImageHelper object
+    image_helper = PdfImageHelper()
+    index = 0
+
+    output_dir = "./images"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    for i in range(doc.Pages.Count):
+        images_info = image_helper.GetImagesInfo(doc.Pages[i])
+        # Get the images and save them as image files
+        for j in range(len(images_info)):
+            image_info = images_info[j]
+            output_file = os.path.join(output_dir, f"{filename}_{index}.png")
+            image_info.Image.Save(output_file)
+            index += 1
+
+    doc.Close()
+>>>>>>> 539ba55972d4c9aa3301c20ce620cbd5e0f5b1eb:backend/app/utils/utils.py
 
 def extract_text_from_pdf(pdf_file):
     pdf_reader = PdfReader(pdf_file)

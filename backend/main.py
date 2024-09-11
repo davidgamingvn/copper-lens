@@ -2,7 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from app.routes import upload_file, ask_question, scrape_web
+<<<<<<< HEAD
 from app.utils import extract_images_from_pdf, extract_text_from_pdf, generate_embeddings
+=======
+>>>>>>> 539ba55972d4c9aa3301c20ce620cbd5e0f5b1eb
 import json
 import os
 from config import Config
