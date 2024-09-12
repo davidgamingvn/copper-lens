@@ -7,14 +7,12 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
-from PyPDF2 import PdfReader
-from spire.pdf.common import *
-from spire.pdf import *
 import requests
 import re
-import os
 from bs4 import BeautifulSoup
 from config import Config
+
+from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf
 
 # Initialize Google Generative AI Embeddings
 genai.configure(api_key=Config.GOOGLE_API_KEY)
@@ -44,36 +42,6 @@ sparkchallenge_index = pinecone.Index(index_name)
 # Initialize Pinecone vector store
 vector_store = PineconeVectorStore(index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
 
-def extract_images_from_pdf(pdf_file, filename):
-    doc = PdfDocument()
-    doc.LoadFromFile(pdf_file)
-
-    # Create a PdfImageHelper object
-    image_helper = PdfImageHelper()
-    index = 0
-
-    output_dir = "./images"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    for i in range(doc.Pages.Count):
-        images_info = image_helper.GetImagesInfo(doc.Pages[i])
-        # Get the images and save them as image files
-        for j in range(len(images_info)):
-            image_info = images_info[j]
-            output_file = os.path.join(output_dir, f"{filename}_{index}.png")
-            image_info.Image.Save(output_file)
-            index += 1
-
-    doc.Close()
-
-def extract_text_from_pdf(pdf_file):
-    pdf_reader = PdfReader(pdf_file)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text() + '\n'
-    return text
-
 def generate_embeddings(text):
     # Split text into chunks
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
@@ -86,11 +54,11 @@ def generate_embeddings(text):
 
     return vectors, chunks
 
-def update_matching_engine(pdf_file, filename):
+def update_matching_engine(pdf_file, filename, images_folder):
     # Extract text from PDF
     text = extract_text_from_pdf(pdf_file)
     # Extract images from PDF
-    extract_images_from_pdf(pdf_file, filename)
+    extract_images_from_pdf(pdf_file, filename, images_folder)
     
     vectors, chunks = generate_embeddings(text)
 

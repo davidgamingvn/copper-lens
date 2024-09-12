@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from app.routes import upload_file, ask_question, scrape_web
-import json
 import os
 from config import Config
 
@@ -14,12 +13,15 @@ app.config.from_object(Config)
 # Initialize CORS
 CORS(app)
 
-# Set the upload folder
-UPLOAD_FOLDER = './uploads'
+# Ensure the upload directory exists
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
 
-# Configure the Flask app
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Ensure the images directory exists
+if not os.path.exists(app.config['IMAGES_FOLDER']):
+    os.makedirs(app.config['IMAGES_FOLDER'])
 
+# Register the blueprints
 app.register_blueprint(upload_file.bp)
 app.register_blueprint(ask_question.bp)
 app.register_blueprint(scrape_web.bp)
