@@ -12,7 +12,7 @@ import re
 from bs4 import BeautifulSoup
 from config import Config
 
-from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf
+from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf, extract_text_from_pdf_gcs, extract_images_from_pdf_gcs
 
 # Initialize Google Generative AI Embeddings
 genai.configure(api_key=Config.GOOGLE_API_KEY)
@@ -56,9 +56,11 @@ def generate_embeddings(text):
 
 def update_matching_engine(pdf_file, filename, images_folder):
     # Extract text from PDF
-    text = extract_text_from_pdf(pdf_file)
+    # text = extract_text_from_pdf(pdf_file)
+    text = extract_text_from_pdf_gcs(filename)
     # Extract images from PDF
-    extract_images_from_pdf(pdf_file, filename, images_folder)
+    # extract_images_from_pdf(pdf_file, filename, images_folder)
+    extract_images_from_pdf_gcs(filename)
     
     vectors, chunks = generate_embeddings(text)
 

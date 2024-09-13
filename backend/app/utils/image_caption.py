@@ -19,6 +19,28 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
 model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
 
+# nlpconnect / vit-gpt2-image-captioning
+from transformers import VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer
+
+vit_model = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+feature_extractor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+tokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+vit_model.to(device)
+
+max_length = 16
+num_beams = 4
+gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
+
+def generate_image_caption_vit(image_path):
+    image = Image.open(image_path).convert("RGB")
+    text = "a picture relate copper mining industry of"
+    inputs = feature_extractor(images=[image], text=text, return_tensors="pt")
+    outputs = vit_model.generate(inputs.pixel_values.to(device), **gen_kwargs)
+    caption = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    print(caption)
+
 def generate_image_caption(image_path):
     # Load and preprocess the image
     image = Image.open(image_path)
@@ -65,7 +87,8 @@ def generate_image_caption_from_url(image_url):
 path = "C:\\Users\\VienD\\PythonCode\\copper-lens\\backend\\images\\image71.png"
 url = "http://images.cocodataset.org/val2017/000000039769.jpg"
 
-generate_image_caption_genai(path)
+generate_image_caption_vit(path)
+# generate_image_caption_genai(path)
 # generate_image_no_resize(path)
 # generate_image_caption_from_url(url)
 # caption = generate_image_caption(path)
