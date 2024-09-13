@@ -1,17 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 import os
 from werkzeug.utils import secure_filename
-from config import Config
-from ..utils import update_matching_engine
+from ..utils.utils import update_matching_engine
 
 bp = Blueprint('upload', __name__)
 
-UPLOAD_FOLDER = './uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
-
-# Ensure the upload directory exists
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
 
 # Function to check if file is allowed
 
@@ -33,11 +27,12 @@ def upload_file():
     if file and allowed_file(file.filename):
         try:
             filename = secure_filename(file.filename)
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            upload_folder = current_app.config['UPLOAD_FOLDER']
+            file_path = os.path.join(upload_folder, filename)
             file.save(file_path)
 
             # Update Matching Engine
-            update_matching_engine(file_path, filename)
+            update_matching_engine(file_path, filename, current_app.config['IMAGES_FOLDER'])
             print('finish update')
 
             # os.remove(file_path)  # Remove the file after processing

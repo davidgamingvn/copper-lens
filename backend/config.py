@@ -9,4 +9,6 @@ class Config:
     PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
     INDEX_NAME = os.getenv('INDEX_NAME')
     EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL')
+    UPLOAD_FOLDER = './uploads'
+    IMAGES_FOLDER = './images'
     pass
