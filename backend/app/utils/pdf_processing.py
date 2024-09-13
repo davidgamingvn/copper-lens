@@ -6,7 +6,6 @@ import io
 import json
 from .gcs_client import GCSClient
 from .image_caption import generate_image_caption_genai
-import concurrent.futures
 
 
 gcs_client = GCSClient('sparkchallenge_images',

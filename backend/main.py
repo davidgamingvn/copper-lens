@@ -2,11 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from app.routes import upload_file, ask_question, scrape_web
-<<<<<<< Updated upstream
-from utils import update_matching_engine, get_qa_chain, web_scraping
-=======
 from app.utils import extract_images_from_pdf, extract_text_from_pdf, generate_embeddings
->>>>>>> Stashed changes
 import json
 import os
 from config import Config
