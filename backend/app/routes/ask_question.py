@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from ..utils.utils import get_qa_chain  # Adjust the import based on your project structure
+from ..utils import get_qa_chain  # Adjust the import based on your project structure
 
 bp = Blueprint('qa', __name__)
 

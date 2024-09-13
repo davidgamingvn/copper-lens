@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 import os
 from werkzeug.utils import secure_filename
-from ..utils.utils import update_matching_engine
+from ..utils.__init__ import update_matching_engine
 from ..utils.google_cloud_helper import upload_pdf_to_gcs
 
 bp = Blueprint('upload', __name__)
@@ -9,19 +9,22 @@ bp = Blueprint('upload', __name__)
 ALLOWED_EXTENSIONS = {'pdf'}
 
 # Function to check if file is allowed
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @bp.route('/upload_file', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
-    
+
     file = request.files['file']
-    
+
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    
+
     if file and allowed_file(file.filename):
         try:
             filename = secure_filename(file.filename)
@@ -34,12 +37,16 @@ def upload_file():
             # Upload to Google Cloud Storage
             pdf_url, blob_pdf = upload_pdf_to_gcs(file, filename)
             
+            upload_folder = current_app.config['UPLOAD_FOLDER']
+            file_path = os.path.join(upload_folder, filename)
+            file.save(file_path)
+
             # Update Matching Engine
             update_matching_engine(blob_pdf, filename, current_app.config['IMAGES_FOLDER'])
             print('finish update')
-            
+
             # os.remove(file_path)  # Remove the file after processing
-            
+
             return jsonify({
                 'message': 'File processed successfully',
             }), 200
