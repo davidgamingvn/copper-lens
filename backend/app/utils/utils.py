@@ -40,7 +40,11 @@ if index_name not in pinecone.list_indexes().names():
 # Initialize Pinecone index
 sparkchallenge_index = pinecone.Index(index_name)
 # Initialize Pinecone vector store
-vector_store = PineconeVectorStore(index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
+vector_store = PineconeVectorStore(
+    index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
+
+
+<< << << < Updated upstream: backend/app/utils/utils.py
 
 
 def extract_images_from_pdf(pdf_file, filename):
@@ -75,6 +79,7 @@ def extract_images_from_pdf(pdf_file, filename):
     # Close the PDF file
     pdf_document.close()
 
+
 def extract_text_from_pdf(pdf_file):
     pdf_reader = PdfReader(pdf_file)
     text = ""
@@ -82,9 +87,15 @@ def extract_text_from_pdf(pdf_file):
         text += page.extract_text() + '\n'
     return text
 
+
+== == == =
+>>>>>> > Stashed changes: backend/app/utils/__init__.py
+
+
 def generate_embeddings(text):
     # Split text into chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000, chunk_overlap=200)
     chunks = text_splitter.split_text(text)
 
     # Generate embeddings for each chunk
@@ -94,28 +105,46 @@ def generate_embeddings(text):
 
     return vectors, chunks
 
+
+<< << << < Updated upstream: backend/app/utils/utils.py
+
+
 def update_matching_engine(pdf_file, filename):
     # Extract text from PDF
     text = extract_text_from_pdf(pdf_file)
     # Extract images from PDF
     extract_images_from_pdf(pdf_file, filename)
-    
-    vectors, chunks = generate_embeddings(text)
 
-    # Create upsert vector
-    upsert_vectors = [
-        {
-            "id": f"{filename}_{i}", 
-            "values": vector,
-            "metadata": {
-                "text": chunk,
-                "filename": filename
-            }
+
+== == == =
+
+
+def update_matching_engine(pdf_file, filename, images_folder):
+    # Extract text from PDF
+    text = extract_text_from_pdf(pdf_file)
+    # Extract images from PDF
+    extract_images_from_pdf(pdf_file, filename, images_folder)
+
+
+>>>>>> > Stashed changes: backend/app/utils/__init__.py
+vectors, chunks = generate_embeddings(text)
+
+# Create upsert vector
+upsert_vectors = [
+    {
+        "id": f"{filename}_{i}",
+        "values": vector,
+        "metadata": {
+            "text": chunk,
+            "filename": filename
         }
-        for i, (vector, chunk) in enumerate(zip(vectors, chunks))
-    ]
-    sparkchallenge_index.upsert(vectors=upsert_vectors, namespace="sparkchallenge")
-    print(sparkchallenge_index.describe_index_stats())
+    }
+    for i, (vector, chunk) in enumerate(zip(vectors, chunks))
+]
+sparkchallenge_index.upsert(
+    vectors=upsert_vectors, namespace="sparkchallenge")
+print(sparkchallenge_index.describe_index_stats())
+
 
 def get_qa_chain():
     # Create a prompt template
@@ -129,7 +158,7 @@ def get_qa_chain():
     {chat_history}
     
     Answer:"""
-    
+
     prompt = PromptTemplate(
         input_variables=["context", "question", "chat_history"],
         template=prompt_template
@@ -151,7 +180,7 @@ def get_qa_chain():
         retriever=vector_store.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={
-                "k": 10, 
+                "k": 10,
                 "score_threshold": 0.1,
             },
         ),
@@ -180,13 +209,15 @@ def filter_text(text):
     response = chain.invoke(input={'text': text})
     return response['text']
 
+
 def remove_non_ascii(text):
     return ''.join(i for i in text if ord(i) < 128)
+
 
 def web_scraping(url):
     # Send a GET request to the URL
     response = requests.get(url)
-    
+
     # Check if the request was successsful
     if response.status_code == 200:
         # Parse the content using BeautifulSoup
@@ -204,7 +235,7 @@ def web_scraping(url):
 
         # Filter through LLM to get relavanet information
         text = filter_text(text)
-        
+
         vectors, chunks = generate_embeddings(text)
 
         print(title)
@@ -222,12 +253,14 @@ def web_scraping(url):
             for i, (vector, chunk) in enumerate(zip(vectors, chunks))
         ]
 
-        sparkchallenge_index.upsert(vectors=upsert_vectors, namespace="sparkchallenge")
+        sparkchallenge_index.upsert(
+            vectors=upsert_vectors, namespace="sparkchallenge")
         # print(sparkchallenge_index.describe_index_stats())
-        
+
         return f"Success Scraping: {response.status_code}"
     else:
         return f"Error: {response.status_code}"
+
 
 def infomation_summarize():
     pass

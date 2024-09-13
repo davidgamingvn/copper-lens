@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify
 import os
 from werkzeug.utils import secure_filename
-from config import Config
-from ..utils.utils import update_matching_engine
+from app.utils import update_matching_engine
 
 bp = Blueprint('upload', __name__)
 
