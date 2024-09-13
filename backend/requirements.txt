@@ -11,12 +11,9 @@ pinecone
 pinecone-client
 PyPDF2
 PyMuPDF
-<<<<<<< Updated upstream
 pytest
-=======
 pytest
 langchain-pinecone 
 pinecone-notebooks
 spire
 spire.pdf
->>>>>>> Stashed changes

@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
-from ..utils.utils import web_scraping  # Adjust the import based on your project structure
+# Adjust the import based on your project structure
+from ..utils import web_scraping
 
 bp = Blueprint('scrape', __name__)
+
 
 @bp.route('/scrape_web', methods=['POST'])
 def scrape_data():
@@ -17,6 +19,6 @@ def scrape_data():
         result = web_scraping(url)
 
         return jsonify({'status': result}), 200
-    
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
