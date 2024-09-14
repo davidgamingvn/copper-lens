@@ -35,11 +35,12 @@ def upload_file():
             # Save file to GCS
             blob_path = f"PDFs/{filename}"
             gcs_client = GCSClient('sparkchallenge_images',
-                       credentials_path='app/utils/gcs_client/credentials.json')
+                                   credentials_path='app/utils/gcs_client/credentials.json')
             gcs_client.upload_file(file_path, blob_path)
 
             # Update Matching Engine
-            update_matching_engine(file_path, filename, current_app.config['IMAGES_FOLDER'])
+            update_matching_engine(file_path, filename,
+                                   current_app.config['IMAGES_FOLDER'])
             print('finish update')
 
             # os.remove(file_path)  # Remove the file after processing

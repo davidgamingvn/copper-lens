@@ -1,4 +1,7 @@
 from PyPDF2 import PdfReader
+from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 from spire.pdf.common import *
 from spire.pdf import *
 from PIL import Image
@@ -7,17 +10,25 @@ import json
 from .gcs_client import GCSClient
 from .image_caption import generate_image_caption_genai
 
-
 gcs_client = GCSClient('sparkchallenge_images',
                        credentials_path='app/utils/gcs_client/credentials.json')
 
 
-def extract_text_from_pdf(pdf_file):
+def extract_text_from_pdf(pdf_file, filename):
     pdf_reader = PdfReader(pdf_file)
     text = ""
     for page in pdf_reader.pages:
         text += page.extract_text() + '\n'
-    return text
+
+    # Filter the extracted text
+    filtered_text = filter_text(text)
+    bullets = {
+        "name": filename,
+        "text": filtered_text
+    }
+
+    update_bullets_json([bullets])
+    return filtered_text
 
 
 def extract_images_from_pdf(pdf_file, filename, images_folder):
@@ -56,6 +67,50 @@ def extract_images_from_pdf(pdf_file, filename, images_folder):
 
     update_captions_json(captions)
     doc.Close()
+
+
+def filter_text(text):
+    # load the model
+    llm = ChatGoogleGenerativeAI(model='gemini-pro', temperature=0.4)
+
+    # set up a prompt
+    prompt = PromptTemplate(
+        input_variables=['text'],
+        template=''' You are given this text:"{text}".
+            I want to filter out only the most important information from the text.
+            Ignore any unnecessary details and provide me with a concise summary.
+            Please filter out the information and provide me with the filtered information.
+            Give me the filtered information in 3 bullet points.
+        '''
+    )
+
+    # create a chain
+    chain = LLMChain(llm=llm, prompt=prompt, verbose=False)
+    response = chain.invoke(input={'text': text})
+    return response['text']
+
+
+def update_bullets_json(new_bullets):
+    # Try to download existing bullets.json
+    try:
+        existing_json = gcs_client.download_as_string("bullets.json")
+        existing_bullets = json.loads(existing_json)
+    except Exception:
+        # If file doesn't exist or there's an error, start with an empty list
+        existing_bullets = {"bullets": []}
+
+    # Update existing bullets with new ones
+    existing_bullets["bullets"].extend(new_bullets)
+
+    # Remove duplicates based on bullet text
+    unique_bullets = {
+        bullet["text"]: bullet for bullet in existing_bullets["bullets"]}
+    existing_bullets["bullets"] = list(unique_bullets.values())
+
+    # Upload updated JSON back to GCS
+    updated_json = json.dumps(existing_bullets, indent=2)
+    gcs_client.upload_from_string(updated_json, "bullets.json")
+    print("Updated bullets.json in GCS")
 
 
 def update_captions_json(new_captions):

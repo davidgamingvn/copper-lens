@@ -13,7 +13,7 @@ PyPDF2
 PyMuPDF
 pytest
 pytest
-langchain-pinecone 
+langchain-pinecone
 pinecone-notebooks
 spire
 spire.pdf
