@@ -91,8 +91,10 @@ def update_matching_engine(pdf_file, filename, images_folder):
         }
         for i, (vector, chunk) in enumerate(zip(vectors, chunks))
     ]
-    sparkchallenge_index.upsert(
-        vectors=upsert_vectors, namespace="sparkchallenge")
+
+    pinecone_client.index.upsert(vectors=upsert_vectors, namespace="sparkchallenge")
+    # sparkchallenge_index.upsert(
+    #     vectors=upsert_vectors, namespace="sparkchallenge")
     
     # Generate embeddings for images caption
     for caption in caption_json:
@@ -110,10 +112,13 @@ def update_matching_engine(pdf_file, filename, images_folder):
             }
             for i, (vector, chunk) in enumerate(zip(vectors, chunks))
         ]
-        sparkchallenge_index.upsert(
-            vectors=upsert_vectors, namespace="images_caption")
         
-    print(sparkchallenge_index.describe_index_stats())
+        pinecone_client.index.upsert(vectors=upsert_vectors, namespace="images_caption")
+        # sparkchallenge_index.upsert(
+        #     vectors=upsert_vectors, namespace="images_caption")
+        
+    # print(sparkchallenge_index.describe_index_stats())
+    print(pinecone_client.index.describe_index_stats())
 
 
 def get_qa_chain(question):
@@ -151,7 +156,7 @@ def get_qa_chain(question):
     # Initialize the conversational retrieval chain
     chain = ConversationalRetrievalChain.from_llm(
         llm=model,
-        retriever=vector_store.as_retriever(
+        retriever=pinecone_client.text_vectors.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={
                 "k": 10,

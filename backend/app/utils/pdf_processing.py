@@ -5,12 +5,8 @@ from langchain.chains import LLMChain
 from spire.pdf.common import *
 from spire.pdf import *
 import json
-from .gcs_client import GCSClient
+from . import gcs_client
 from .image_caption import generate_image_caption_genai
-
-gcs_client = GCSClient('sparkchallenge_images',
-                       credentials_path='app/utils/gcs_client/credentials.json')
-
 
 def extract_text_from_pdf(pdf_file, filename):
     pdf_reader = PdfReader(pdf_file)
@@ -26,7 +22,8 @@ def extract_text_from_pdf(pdf_file, filename):
     }
 
     update_bullets_json([bullets])
-    return filtered_text
+    # Need a full text for detailed analysis
+    return text
 
 
 def extract_images_from_pdf(pdf_file, filename, images_folder):
