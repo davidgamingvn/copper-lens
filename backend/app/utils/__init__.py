@@ -14,7 +14,7 @@ import re
 from bs4 import BeautifulSoup
 from config import Config
 
-from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf, extract_text_from_pdf_gcs, extract_images_from_pdf_gcs
+from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf, filter_text
 from spire.pdf.common import *
 from spire.pdf import *
 
