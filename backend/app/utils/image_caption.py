@@ -9,7 +9,7 @@ caption_model = genai.GenerativeModel('gemini-1.5-flash')
 
 
 def generate_image_caption_genai(image_data):
-    image = Image.open(io.BytesIO(image_data))
+    image = Image.open(image_data)
     generation_config = genai.types.GenerationConfig(temperature=0.4)
     user_prompt = Config.GENERATE_CAPTION_PROMPT
     caption = caption_model.generate_content(

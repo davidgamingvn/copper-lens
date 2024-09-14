@@ -3,6 +3,7 @@ import os
 from werkzeug.utils import secure_filename
 from app.utils import update_matching_engine
 
+from app.utils.gcs_client import GCSClient
 bp = Blueprint('upload', __name__)
 
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -30,6 +31,12 @@ def upload_file():
             upload_folder = current_app.config['UPLOAD_FOLDER']
             file_path = os.path.join(upload_folder, filename)
             file.save(file_path)
+
+            # Save file to GCS
+            blob_path = f"PDFs/{filename}"
+            gcs_client = GCSClient('sparkchallenge_images',
+                       credentials_path='app/utils/gcs_client/credentials.json')
+            gcs_client.upload_file(file_path, blob_path)
 
             # Update Matching Engine
             update_matching_engine(file_path, filename, current_app.config['IMAGES_FOLDER'])
