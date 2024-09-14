@@ -22,33 +22,36 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { Label } from "~/components/ui/label";
 import Image from "next/image";
 import { useStore } from "./store";
+import { usePosts } from "./hooks/news";
 
 export default function Home() {
-  const { chatMessages, news, addMessage } = useStore();
+  const { posts, addMessage, initializePosts } = useStore();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [inputMessage, setInputMessage] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const isLargeScreen = useMediaQuery({ query: "(min-width: 1024px)" });
   const [expandedNewsId, setExpandedNewsId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  const {
+    data: fetchedPosts,
+    isLoading: isLoadingPosts,
+    error: errorPosts,
+  } = usePosts();
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputMessage.trim()) {
-      addMessage(inputMessage);
-      setInputMessage("");
+  useEffect(() => {
+    if (fetchedPosts) {
+      initializePosts(fetchedPosts);
     }
-  };
+  }, [fetchedPosts, initializePosts]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      // For this example, we'll just add the file name to the chat
       addMessage(`File uploaded: ${file.name}`);
     }
   };
@@ -64,7 +67,6 @@ export default function Home() {
     const file = e.dataTransfer.files?.[0];
     if (file) {
       setUploadedFile(file);
-      // For this example, we'll just add the file name to the chat
       addMessage(`File uploaded: ${file.name}`);
     }
   };
@@ -75,6 +77,14 @@ export default function Home() {
 
   if (!mounted) {
     return null;
+  }
+
+  if (isLoadingPosts) {
+    return <div>Loading...</div>;
+  }
+
+  if (errorPosts) {
+    return <div>Error loading data</div>;
   }
 
   return (
@@ -148,13 +158,13 @@ export default function Home() {
             </Card>
             <h2 className="mb-4 text-xl font-semibold">Latest News</h2>
             <ScrollArea className="h-[25rem] w-full">
-              {news.map((item) => (
+              {posts.map((item) => (
                 <Card key={item.id} className="mb-4 overflow-hidden">
                   <CardContent className="p-0">
                     <div className="flex items-center space-x-4 bg-accent p-4">
                       <div className="flex-1">
                         <h3 className="mb-2 font-semibold text-black">
-                          {item.title}
+                          {item.name}
                         </h3>
                         <div className="flex space-x-2">
                           <Button
@@ -184,7 +194,7 @@ export default function Home() {
                     >
                       <div className="p-4">
                         <ul className="list-disc space-y-2 pl-5">
-                          {item.summary.map((point, index) => (
+                          {item.text.map((point, index) => (
                             <li key={index}>{point}</li>
                           ))}
                         </ul>

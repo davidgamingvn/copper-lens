@@ -1,9 +1,10 @@
 import "~/styles/globals.css";
 
+import { HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { type Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { ThemeProvider } from "~/components/theme-provider";
-
+import queryClient from "./hooks";
 const poppins = Poppins({
   subsets: ["latin"],
   display: "swap",
@@ -24,14 +25,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={poppins.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <HydrationBoundary>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+          </HydrationBoundary>
+        </QueryClientProvider>
       </body>
     </html>
   );
