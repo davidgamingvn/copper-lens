@@ -3,7 +3,9 @@ import os
 from werkzeug.utils import secure_filename
 from app.utils import update_matching_engine
 
+
 from app.utils.gcs_client import GCSClient
+from app.utils.google_cloud_helper import upload_pdf_to_gcs
 bp = Blueprint('upload', __name__)
 
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -28,6 +30,15 @@ def upload_file():
     if file and allowed_file(file.filename):
         try:
             filename = secure_filename(file.filename)
+
+            # Save to local path
+            # upload_folder = current_app.config['UPLOAD_FOLDER']
+            # file_path = os.path.join(upload_folder, filename)
+            # file.save(file_path)
+
+            # Upload to Google Cloud Storage
+            pdf_url, blob_pdf = upload_pdf_to_gcs(file, filename)
+
             upload_folder = current_app.config['UPLOAD_FOLDER']
             file_path = os.path.join(upload_folder, filename)
             file.save(file_path)
@@ -39,8 +50,8 @@ def upload_file():
             gcs_client.upload_file(file_path, blob_path)
 
             # Update Matching Engine
-            update_matching_engine(file_path, filename,
-                                   current_app.config['IMAGES_FOLDER'])
+            update_matching_engine(
+                blob_pdf, filename, current_app.config['IMAGES_FOLDER'])
             print('finish update')
 
             # os.remove(file_path)  # Remove the file after processing
