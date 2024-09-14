@@ -11,14 +11,13 @@ from .image_caption import generate_image_caption_genai
 gcs_client = GCSClient('sparkchallenge_images',
                        credentials_path='app/utils/gcs_client/credentials.json')
 
-
+# Used for local storage
 def extract_text_from_pdf(pdf_file):
     pdf_reader = PdfReader(pdf_file)
     text = ""
     for page in pdf_reader.pages:
         text += page.extract_text() + '\n'
     return text
-
 
 def extract_images_from_pdf(pdf_file, filename, images_folder):
     doc = PdfDocument()
