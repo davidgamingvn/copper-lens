@@ -72,9 +72,9 @@ def generate_embeddings(text):
 
 def update_matching_engine(pdf_file, filename, images_folder):
     # Extract text from PDF
-    text = extract_text_from_pdf(pdf_file, filename)
+    text = extract_text_from_pdf(pdf_file, filename, gcs_client)
     # Extract images from PDF
-    caption_json = extract_images_from_pdf(pdf_file, filename, images_folder)
+    caption_json = extract_images_from_pdf(pdf_file, filename, images_folder, gcs_client)
 
     # Generate embeddings for pdf text
     vectors, chunks = generate_embeddings(text)

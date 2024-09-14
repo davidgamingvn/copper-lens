@@ -5,10 +5,10 @@ from langchain.chains import LLMChain
 from spire.pdf.common import *
 from spire.pdf import *
 import json
-from . import gcs_client
+import uuid
 from .image_caption import generate_image_caption_genai
 
-def extract_text_from_pdf(pdf_file, filename):
+def extract_text_from_pdf(pdf_file, filename, gcs_client):
     pdf_reader = PdfReader(pdf_file)
     text = ""
     for page in pdf_reader.pages:
@@ -17,16 +17,18 @@ def extract_text_from_pdf(pdf_file, filename):
     # Filter the extracted text
     filtered_text = filter_text(text)
     bullets = {
+        "id": str(uuid.uuid4()),
         "name": filename,
-        "text": filtered_text
+        "text": 
+            [filtered_text[0], filtered_text[1], filtered_text[2]]
     }
 
-    update_bullets_json([bullets])
+    update_bullets_json([bullets], gcs_client)
     # Need a full text for detailed analysis
     return text
 
 
-def extract_images_from_pdf(pdf_file, filename, images_folder):
+def extract_images_from_pdf(pdf_file, filename, images_folder, gcs_client):
     doc = PdfDocument()
     doc.LoadFromFile(pdf_file)
 
@@ -60,7 +62,7 @@ def extract_images_from_pdf(pdf_file, filename, images_folder):
             os.remove(local_image_path)
             index += 1
 
-    update_captions_json(captions)
+    update_captions_json(captions, gcs_client)
     doc.Close()
     return captions
 
@@ -83,10 +85,15 @@ def filter_text(text):
     # create a chain
     chain = LLMChain(llm=llm, prompt=prompt, verbose=False)
     response = chain.invoke(input={'text': text})
-    return response['text']
+    
+
+    # process text
+    text = response['text']
+    text = text.split('\n')
+    return text
 
 
-def update_bullets_json(new_bullets):
+def update_bullets_json(new_bullets, gcs_client):
     # Try to download existing bullets.json
     try:
         existing_json = gcs_client.download_as_string("bullets.json")
@@ -100,7 +107,7 @@ def update_bullets_json(new_bullets):
 
     # Remove duplicates based on bullet text
     unique_bullets = {
-        bullet["text"]: bullet for bullet in existing_bullets["bullets"]}
+        tuple(bullet["text"]): bullet for bullet in existing_bullets["bullets"]}
     existing_bullets["bullets"] = list(unique_bullets.values())
 
     # Upload updated JSON back to GCS
@@ -109,7 +116,7 @@ def update_bullets_json(new_bullets):
     print("Updated bullets.json in GCS")
 
 
-def update_captions_json(new_captions):
+def update_captions_json(new_captions, gcs_client):
     # Try to download existing captions.json
     try:
         existing_json = gcs_client.download_as_string("captions.json")
