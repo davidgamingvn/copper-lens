@@ -12,12 +12,12 @@ def ask_question():
         return jsonify({'error': 'No question provided'}), 400
     
     try:
-        qa_chain = get_qa_chain()
-        answer = qa_chain.run(question)
-        print('answer: ', answer)
+        qa_chain = get_qa_chain(question=question)
+        # answer = qa_chain.run(question)
+        # print('answer: ', answer)
         return jsonify({
             'question': question,
-            'answer': answer
+            'answer': qa_chain
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500

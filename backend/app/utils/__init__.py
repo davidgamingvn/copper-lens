@@ -1,5 +1,3 @@
-import io
-import os
 import google.generativeai as genai
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -14,12 +12,18 @@ import re
 from bs4 import BeautifulSoup
 from config import Config
 
-from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf, extract_text_from_pdf_gcs, extract_images_from_pdf_gcs
+from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf
+from .gcs_client import GCSClient
+from .pinecone_client import PineconeClient
 from spire.pdf.common import *
 from spire.pdf import *
 
 # Initialize Google Generative AI Embeddings
 genai.configure(api_key=Config.GOOGLE_API_KEY)
+
+# Initialize GCS Client
+gcs_client = GCSClient('sparkchallenge_images',
+                       credentials_path=Config.CREDENTIALS_PATH)
 
 # Initialize Pinecone PINECONE_API_KEY
 pinecone = Pinecone(api_key=Config.PINECONE_API_KEY)
@@ -64,10 +68,12 @@ def update_matching_engine(pdf_file, filename, images_folder):
     # Extract text from PDF
     text = extract_text_from_pdf(pdf_file)
     # Extract images from PDF
-    extract_images_from_pdf(pdf_file, filename, images_folder)
+    caption_json = extract_images_from_pdf(pdf_file, filename, images_folder)
+
+    # Generate embeddings for pdf text
     vectors, chunks = generate_embeddings(text)
 
-    # Create upsert vector
+    # Create upsert vector for pdf text
     upsert_vectors = [
         {
             "id": f"{filename}_{i}",
@@ -81,10 +87,30 @@ def update_matching_engine(pdf_file, filename, images_folder):
     ]
     sparkchallenge_index.upsert(
         vectors=upsert_vectors, namespace="sparkchallenge")
+    
+    # Generate embeddings for images caption
+    for caption in caption_json:
+        vectors, chunks = generate_embeddings(caption['caption'])
+        # Create upsert vector for image caption
+        upsert_vectors = [
+            {
+                "id": f"{caption['name']}_{i}",
+                "values": vector,
+                "metadata": {
+                    "text": chunk,
+                    "filename": caption['name'],
+                    "caption": caption['caption']
+                }
+            }
+            for i, (vector, chunk) in enumerate(zip(vectors, chunks))
+        ]
+        sparkchallenge_index.upsert(
+            vectors=upsert_vectors, namespace="images_caption")
+        
     print(sparkchallenge_index.describe_index_stats())
 
 
-def get_qa_chain():
+def get_qa_chain(question):
     # Create a prompt template
     prompt_template = """You are an AI assistant helping the user analyze articles and research papers and answer any questions related to it.
     
@@ -126,7 +152,22 @@ def get_qa_chain():
         combine_docs_chain_kwargs={"prompt": prompt}
     )
 
-    return chain
+    response = chain.invoke(input={"question": question})
+    anwser = response['answer']
+    
+    pinecone_client = PineconeClient(
+        api_key=Config.PINECONE_API_KEY, index_name=Config.INDEX_NAME, model_name=Config.EMBEDDING_MODEL)
+    
+    # relevant_image = {pagecontent, metadata}
+    relevant_image = pinecone_client.get_relevant_image(anwser)
+    print(relevant_image)
+
+    anwser = {
+        "answer": anwser,
+        "relevant_image": relevant_image
+    }
+
+    return anwser
 
 
 def filter_text(text):

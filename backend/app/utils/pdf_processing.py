@@ -1,8 +1,6 @@
 from PyPDF2 import PdfReader
 from spire.pdf.common import *
 from spire.pdf import *
-from PIL import Image
-import io
 import json
 from .gcs_client import GCSClient
 from .image_caption import generate_image_caption_genai
@@ -55,6 +53,7 @@ def extract_images_from_pdf(pdf_file, filename, images_folder):
 
     update_captions_json(captions)
     doc.Close()
+    return captions
 
 
 def update_captions_json(new_captions):

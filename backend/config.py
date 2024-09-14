@@ -13,3 +13,4 @@ class Config:
     GENERATE_CAPTION_PROMPT = os.getenv('GENERATE_CAPTION_PROMPT')
     UPLOAD_FOLDER = './uploads'
     IMAGES_FOLDER = './images'
+    CREDENTIALS_PATH = os.getenv('CREDENTIALS_PATH')
