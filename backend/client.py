@@ -73,6 +73,14 @@ def web_scapper(job_url):
         print(f"Error scrapping: {response.status_code}")
         print(response.text)
 
+def bullet_points():
+    url = f"{SERVER_URL}/bullet_points"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print(response.json())
+    else:
+        print(f"Error getting bullets point: {response.status_code}")
+        print(response.text)
 
 def main():
     while True:
@@ -80,7 +88,8 @@ def main():
         print("2. Search similar content")
         print("3. Ask a question")
         print("4. Web Scrapper")
-        print("5. Exit")
+        print("5. Bullet Points")
+        print("6. Exit")
 
         choice = input("Enter your choice (1-4): ")
 
@@ -97,6 +106,8 @@ def main():
             url = input("Enter the URL: ")
             web_scapper(url)
         elif choice == '5':
+            bullet_points()
+        elif choice == '6':
             print("Goodbye!")
             break
         else:

@@ -25,6 +25,11 @@ genai.configure(api_key=Config.GOOGLE_API_KEY)
 gcs_client = GCSClient('sparkchallenge_images',
                        credentials_path=Config.CREDENTIALS_PATH)
 
+# Initialize Pinecone Client
+pinecone_client = PineconeClient(api_key=Config.PINECONE_API_KEY, 
+                                 index_name=Config.INDEX_NAME, model_name=Config.EMBEDDING_MODEL)
+    
+
 # Initialize Pinecone PINECONE_API_KEY
 pinecone = Pinecone(api_key=Config.PINECONE_API_KEY)
 
@@ -159,10 +164,7 @@ def get_qa_chain(question):
 
     response = chain.invoke(input={"question": question})
     anwser = response['answer']
-    
-    pinecone_client = PineconeClient(
-        api_key=Config.PINECONE_API_KEY, index_name=Config.INDEX_NAME, model_name=Config.EMBEDDING_MODEL)
-    
+
     # relevant_image = {pagecontent, metadata}
     relevant_image = pinecone_client.get_relevant_image(anwser)
     print(relevant_image)
@@ -227,5 +229,5 @@ def web_scraping(url):
         return f"Error: {response.status_code}"
 
 
-def infomation_summarize():
-    pass
+def get_bullet_points():
+    return gcs_client.download_as_string('bullets.json')
