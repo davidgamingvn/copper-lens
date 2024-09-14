@@ -12,7 +12,7 @@ import re
 from bs4 import BeautifulSoup
 from config import Config
 
-from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf
+from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf, filter_text
 from .gcs_client import GCSClient
 from .pinecone_client import PineconeClient
 from spire.pdf.common import *
@@ -51,6 +51,7 @@ sparkchallenge_index = pinecone.Index(index_name)
 vector_store = PineconeVectorStore(
     index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
 
+
 def generate_embeddings(text):
     # Split text into chunks
     text_splitter = RecursiveCharacterTextSplitter(
@@ -66,7 +67,7 @@ def generate_embeddings(text):
 
 def update_matching_engine(pdf_file, filename, images_folder):
     # Extract text from PDF
-    text = extract_text_from_pdf(pdf_file)
+    text = extract_text_from_pdf(pdf_file, filename)
     # Extract images from PDF
     caption_json = extract_images_from_pdf(pdf_file, filename, images_folder)
 
@@ -113,14 +114,18 @@ def update_matching_engine(pdf_file, filename, images_folder):
 def get_qa_chain(question):
     # Create a prompt template
     prompt_template = """You are an AI assistant helping the user analyze articles and research papers and answer any questions related to it.
-    
+
+    Only use the context provided to answer the question. If the answer is not in the context, say "I don't know".
+
+    Only provide the answer that is most relevant to the question.
+
     Context: {context}
-    
+
     Question: {question}
-    
+
     Previous conversation:
     {chat_history}
-    
+
     Answer:"""
 
     prompt = PromptTemplate(
@@ -168,25 +173,6 @@ def get_qa_chain(question):
     }
 
     return anwser
-
-
-def filter_text(text):
-    # load the model
-    llm = ChatGoogleGenerativeAI(model='gemini-pro', temperature=0.4)
-
-    # set up a prompt
-    prompt = PromptTemplate(
-        input_variables=['text'],
-        template=''' You are given this text:"{text}".
-            I want to filter out only the information between <p> and </p> from the text.
-            Please filter out the information and provide me with the filtered information.
-        '''
-    )
-
-    # create a chain
-    chain = LLMChain(llm=llm, prompt=prompt, verbose=False)
-    response = chain.invoke(input={'text': text})
-    return response['text']
 
 
 def remove_non_ascii(text):
