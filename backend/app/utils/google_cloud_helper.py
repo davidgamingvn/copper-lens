@@ -14,12 +14,21 @@ def upload_pdf_to_gcs(file, filename):
     )
     return blob.public_url, blob_name
 
-# Download PDF from GCS.
+# Download PDF from GCS as bytes array.
 # blob_name: folder_name/file_name
 def download_pdf_from_gcs(filename):
     bucket = storage_client.bucket(current_app.config['GCS_BUCKET_NAME'])
     blob = bucket.blob(f"PDFs/{filename}")
     return blob.download_as_bytes()
+
+# Download PDF from GCS as file.
+def download_pdf_from_gcs_as_file(filename):
+    bucket = storage_client.bucket(current_app.config['GCS_BUCKET_NAME'])
+    blob = bucket.blob(f"PDFs/{filename}")
+    local_path = f"./tmp/{filename}"
+    with open(local_path, 'wb') as file:
+        blob.download_to_file(file)
+    return local_path
 
 def upload_image_to_gcs(file, filename):
     bucket = storage_client.bucket(current_app.config['GCS_BUCKET_NAME'])

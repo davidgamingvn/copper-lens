@@ -31,13 +31,6 @@ def upload_file():
             filename = secure_filename(file.filename)
 
             # Save to local path
-            # upload_folder = current_app.config['UPLOAD_FOLDER']
-            # file_path = os.path.join(upload_folder, filename)
-            # file.save(file_path)
-
-            # Upload to Google Cloud Storage
-            pdf_url, blob_pdf = upload_pdf_to_gcs(file, filename)
-            
             upload_folder = current_app.config['UPLOAD_FOLDER']
             file_path = os.path.join(upload_folder, filename)
             file.save(file_path)
@@ -49,7 +42,7 @@ def upload_file():
             gcs_client.upload_file(file_path, blob_path)
 
             # Update Matching Engine
-            update_matching_engine(blob_pdf, filename, current_app.config['IMAGES_FOLDER'])
+            update_matching_engine(file_path, filename, current_app.config['IMAGES_FOLDER'])
             print('finish update')
 
             # os.remove(file_path)  # Remove the file after processing

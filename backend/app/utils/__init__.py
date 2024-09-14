@@ -62,8 +62,7 @@ def generate_embeddings(text):
 
 def update_matching_engine(pdf_file, filename, images_folder):
     # Extract text from PDF
-    # text = extract_text_from_pdf(pdf_file)
-    text = extract_text_from_pdf_gcs(filename)
+    text = extract_text_from_pdf(pdf_file)
     # Extract images from PDF
     extract_images_from_pdf(pdf_file, filename, images_folder)
     vectors, chunks = generate_embeddings(text)
