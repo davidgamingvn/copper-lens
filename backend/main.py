@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from app.routes import upload_file, ask_question, scrape_web
+
 import json
 import os
 from config import Config

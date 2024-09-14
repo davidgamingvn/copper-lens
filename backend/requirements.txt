@@ -12,10 +12,8 @@ pinecone-client
 PyPDF2
 PyMuPDF
 pytest
-<<<<<<< HEAD
+pytest
 langchain-pinecone 
 pinecone-notebooks
-=======
 spire
 spire.pdf
->>>>>>> 539ba55972d4c9aa3301c20ce620cbd5e0f5b1eb
