@@ -19,9 +19,11 @@ import { formatFileSize } from "~/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "~/app/store";
 import ChatBox from "./ChatBox";
+import { useChatQuery } from "~/app/hooks/news";
+import { type ChatMessage } from "../lib/index";
 
 const ChatbotInterface: React.FC = () => {
-  const { chatMessages, addMessage } = useStore();
+  const { chatMessages, addMessage, clearMessages } = useStore();
   const [inputMessage, setInputMessage] = useState("");
   const { theme } = useTheme();
   const logo =
@@ -30,11 +32,13 @@ const ChatbotInterface: React.FC = () => {
       : "/assets/brand/logoBlack.svg";
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const chatQuery = useChatQuery();
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputMessage.trim()) {
-      addMessage(inputMessage);
+      addMessage({ from: "user", text: inputMessage } as ChatMessage);
+      chatQuery.mutate(inputMessage);
       setInputMessage("");
     }
   };
@@ -42,7 +46,9 @@ const ChatbotInterface: React.FC = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      addMessage(`File uploaded: ${file.name} (${formatFileSize(file.size)})`);
+      addMessage({
+        text: `File uploaded: ${file.name} (${formatFileSize(file.size)})`,
+      } as ChatMessage);
     }
   };
 
@@ -50,7 +56,7 @@ const ChatbotInterface: React.FC = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [chatMessages]);
+  }, []);
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-zinc-800">
@@ -75,7 +81,7 @@ const ChatbotInterface: React.FC = () => {
           <Button variant="ghost" size="icon" className="hover:text-primary">
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger onClick={clearMessages}>
                   <RefreshCw className="h-4 w-4" />
                 </TooltipTrigger>
                 <TooltipContent className="bg-transparent p-2 text-foreground">
@@ -90,12 +96,31 @@ const ChatbotInterface: React.FC = () => {
         <div className="flex flex-col space-y-4">
           {chatMessages.map((message, index) => (
             <ChatBox
+              from={message.from}
               key={index}
-              message={message}
+              message={message.text}
+              image64={message.image64}
               index={index}
               scrollRef={scrollRef}
             />
           ))}
+          {chatQuery.isPending && (
+            <ChatBox
+              from="bot"
+              message="Thinking..."
+              index={chatMessages.length}
+              scrollRef={scrollRef}
+            />
+          )}
+          {chatQuery.isError && (
+            <ChatBox
+              from="bot"
+              message="Error occurred. Please try again."
+              index={chatMessages.length + 1}
+              scrollRef={scrollRef}
+            />
+          )}
+          <div ref={scrollRef} />
         </div>
       </ScrollArea>
       <form onSubmit={handleSendMessage} className="border-t p-4">

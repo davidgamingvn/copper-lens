@@ -23,26 +23,23 @@ import { Label } from "~/components/ui/label";
 import { Spinner } from "~/components/ui/spinner";
 import Image from "next/image";
 import { useStore } from "./store";
-import { fetchPosts } from "./hooks/news";
-import { useQuery } from "@tanstack/react-query";
-import { type Post } from "~/lib/news";
+import { usePosts } from "./hooks/news";
+import ArticlePreview from "~/components/ArticlePreview";
 
 export default function Home() {
-  const { posts, addMessage, initializePosts } = useStore();
+  const { posts, initializePosts } = useStore();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const isLargeScreen = useMediaQuery({ query: "(min-width: 1024px)" });
   const [expandedNewsId, setExpandedNewsId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [link, setLink] = useState<string>("");
 
   const {
     data: fetchedPosts,
     isLoading: isLoadingPosts,
     error: errorPosts,
-  } = useQuery<Post[]>({
-    queryKey: ["posts"],
-    queryFn: fetchPosts,
-  });
+  } = usePosts();
 
   useEffect(() => {
     setMounted(true);
@@ -58,8 +55,12 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      addMessage(`File uploaded: ${file.name}`);
+      // addMessage(`File uploaded: ${file.name}`);
     }
+  };
+
+  const handleLink = () => {
+    setLink(link);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -73,7 +74,7 @@ export default function Home() {
     const file = e.dataTransfer.files?.[0];
     if (file) {
       setUploadedFile(file);
-      addMessage(`File uploaded: ${file.name}`);
+      // addMessage(`File uploaded: ${file.name}`);
     }
   };
 
@@ -158,7 +159,11 @@ export default function Home() {
             <ScrollArea className="h-[25rem] w-full">
               {isLoadingPosts ? (
                 <div className="flex h-full items-center justify-center">
-                  <Spinner size="large" className="text-white"/>
+                  <Spinner
+                    size="large"
+                    className="text-primary dark:text-accent"
+                  />
+                  <Label className="ml-2">Loading...</Label>
                 </div>
               ) : (
                 posts.map((item) => (
@@ -169,6 +174,7 @@ export default function Home() {
                           <h3 className="mb-2 font-semibold text-black">
                             {item.name}
                           </h3>
+
                           <div className="flex space-x-2">
                             <Button
                               variant="secondary"
@@ -179,12 +185,30 @@ export default function Home() {
                                 ? "Hide Insight"
                                 : "View Insight"}
                             </Button>
-                            <Button
-                              variant="secondary"
-                              className="bg-secondary text-white"
-                            >
-                              Visit site
-                            </Button>
+                            {item.type === "article" && item.url && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="secondary"
+                                    className="bg-secondary text-white"
+                                  >
+                                    Visit site
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent>
+                                  <ArticlePreview url={item.url} />
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                            {item.type === "pdf" && item.url && (
+                              <Button
+                                variant="secondary"
+                                className="bg-secondary text-white"
+                                onClick={() => window.open(item.url, "_blank")}
+                              >
+                                Download document
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>

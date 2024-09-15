@@ -7,6 +7,8 @@ export type NewsItem = {
 
 export type Post = {
   id : number;
+  type: string;
+  url?: string;
   name: string;
   text: string[];
 }

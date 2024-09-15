@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs))
 }
 
 export const formatFileSize = (size: number) => {
@@ -13,4 +13,5 @@ export const formatFileSize = (size: number) => {
   return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 };
 
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://sparkchallenge-flask-backend-583938538589.us-central1.run.app"; // Default to localhost if not set
+export const BACKEND_URL = "https://sparkchallenge-flask-backend-583938538589.us-central1.run.app";
+export const LINK_PREVIEW_API = "fc4a427b6cfc86a6549f46198e4a95b5"
