@@ -18,6 +18,7 @@ def extract_text_from_pdf(pdf_file, filename, gcs_client):
     filtered_text = filter_text(text)
     bullets = {
         "id": str(uuid.uuid4()),
+        "type": "pdf",
         "name": filename,
         "text": 
             [filtered_text[0], filtered_text[1], filtered_text[2]]
@@ -48,10 +49,10 @@ def extract_images_from_pdf(pdf_file, filename, images_folder, gcs_client):
             # Upload image to GCS
             gcs_image_path = f"Images/{filename}_{index}.png"
             gcs_client.upload_file(local_image_path, gcs_image_path)
-            print(f"Uploaded {gcs_image_path} to GCS")
 
             caption = generate_image_caption_genai(local_image_path)
-            print(f"Generated caption: {caption}")
+            print("Generated caption")
+            # print(f"Generated caption: {caption}")
 
             captions.append({
                 "name": f"{filename}_{index}.png",
@@ -69,7 +70,7 @@ def extract_images_from_pdf(pdf_file, filename, images_folder, gcs_client):
 
 def filter_text(text):
     # load the model
-    llm = ChatGoogleGenerativeAI(model='gemini-pro', temperature=0.4)
+    llm = ChatGoogleGenerativeAI(model='gemini-1.5-pro', temperature=0.4)
 
     # set up a prompt
     prompt = PromptTemplate(
@@ -78,7 +79,8 @@ def filter_text(text):
             I want to filter out only the most important information from the text.
             Ignore any unnecessary details and provide me with a concise summary.
             Please filter out the information and provide me with the filtered information.
-            Give me the filtered information in 3 bullet points.
+            Give me the filtered information in only 3 bullet points.
+            I do not need any extra introduction.
         '''
     )
 

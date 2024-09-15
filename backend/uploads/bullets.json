@@ -1,0 +1,35 @@
+{
+    "bullets": [
+      {
+        "id": "e974d9b5-13eb-4270-b7ec-dec0e6121210",
+        "type": "pdf",
+        "name": "test.pdf",
+        "text": [
+          "- Arizona is a major copper producer, but faces water scarcity due to its desert climate and population growth.",
+          "- Water consumption in copper mining varies depending on the mining and processing methods used, and ranges from 4.5 to 65.2 gallons per pound of copper.",
+          "- Hydrometallurgical (leaching) and pyrometallurgical (smelting) processes are commonly used for copper extraction, with leaching requiring less water than smelting."
+        ]
+      },
+      {
+        "id": "9369ad29-45a9-4cbf-b927-c02b8f59dac0",
+        "url": "https://azluminaria.org/2022/08/26/fight-over-resolution-copper-mine-drags-on-and-both-sides-expect-more/?gad_source=1&gclid=Cj0KCQjw0Oq2BhCCARIsAA5hubWFzB_DySp2dwMPHnIcIMnaaI9wQHJ9ui25mzhUQXrUy1YY6Aopp64aAlmVEALw_wcB",
+        "type": "article",
+        "name": "Fight over Resolution Copper Mine drags on  and both sides expect more - AZ Luminaria",
+        "text": [
+          "- Resolution Copper mine in Arizona faces opposition from Apache tribe and environmental groups due to concerns over sacred land destruction, environmental damage, and water depletion.",
+          "- The project, approved by Congress in 2014, involves a land swap between the government and Resolution Copper, but faces ongoing legal challenges and a review of its environmental impact statement under the Biden administration.",
+          "- While Resolution Copper argues the mine will bring economic benefits, opponents believe the environmental and cultural costs are too high, and legal battles are expected to continue, potentially delaying the project for years. "
+        ]
+      },
+      {
+        "id": "7814d267-cf0d-4819-978c-1ca8999c3cee",
+        "type": "pdf",
+        "name": "2013-02-0532_water_consumption.pdf",
+        "text": [
+          "* Arizona copper mines are highly conscious of water conservation due to the state's desert environment and strive to reduce consumption and maximize recirculation.",
+          "* The average water use per pound of copper produced varies by mine and year, ranging from approximately 5 to 65 gallons. Mines employ various water management practices, including recycling, leak prevention, and monitoring, to optimize usage.",
+          "* The Arizona Department of Water Resources (ADWR) mandates specific conservation measures for mines, including minimizing tailings water loss, reclaiming and recycling water, and submitting water conservation plans and annual reports. "
+        ]
+      }
+    ]
+  }

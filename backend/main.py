@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from app.routes import upload_file, ask_question, scrape_web, bullets_point
+from app.routes import upload_file, ask_question, scrape_web, bullets_point, get_pdf
 import os
 from config import Config
 
@@ -25,6 +25,7 @@ app.register_blueprint(upload_file.bp)
 app.register_blueprint(ask_question.bp)
 app.register_blueprint(scrape_web.bp)
 app.register_blueprint(bullets_point.bp)
+app.register_blueprint(get_pdf.bp)
 
 # def create_app(config_class=Config):
 #     app = Flask(__name__)
