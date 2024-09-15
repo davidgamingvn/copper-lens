@@ -12,3 +12,5 @@ export const formatFileSize = (size: number) => {
     return `${(size / (1024 * 1024)).toFixed(2)} MB`;
   return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 };
+
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://sparkchallenge-flask-backend-583938538589.us-central1.run.app"; // Default to localhost if not set

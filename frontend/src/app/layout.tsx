@@ -1,10 +1,8 @@
 import "~/styles/globals.css";
 
-import { HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { type Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { ThemeProvider } from "~/components/theme-provider";
-import queryClient from "./hooks";
 const poppins = Poppins({
   subsets: ["latin"],
   display: "swap",
@@ -12,6 +10,7 @@ const poppins = Poppins({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
   style: ["normal", "italic"],
 });
+import { ReactQueryProvider } from "~/components/react-query-provider";
 
 export const metadata: Metadata = {
   title: "CopperLens",
@@ -23,21 +22,19 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className={poppins.className}>
-        <QueryClientProvider client={queryClient}>
-          <HydrationBoundary>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-            </ThemeProvider>
-          </HydrationBoundary>
-        </QueryClientProvider>
-      </body>
-    </html>
+    <ReactQueryProvider>
+      <html lang="en">
+        <body className={poppins.className}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </body>
+      </html>
+    </ReactQueryProvider>
   );
 }
