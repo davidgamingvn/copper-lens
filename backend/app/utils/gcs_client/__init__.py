@@ -36,6 +36,10 @@ class GCSClient:
     def download_as_string(self, blob_name):
         blob = self.bucket.blob(blob_name)
         return blob.download_as_text()
+    
+    def download_as_bytes(self, blob_name):
+        blob = self.bucket.blob(blob_name)
+        return blob.download_as_bytes()
 
     def upload_from_memory(self, data, destination_blob_name):
         blob = self.bucket.blob(destination_blob_name)

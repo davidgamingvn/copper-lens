@@ -9,6 +9,7 @@ from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 import requests
 import re
+import base64
 from bs4 import BeautifulSoup
 from config import Config
 
@@ -172,11 +173,15 @@ def get_qa_chain(question):
 
     # relevant_image = {pagecontent, metadata}
     relevant_image = pinecone_client.get_relevant_image(anwser)
-    print(relevant_image)
+    
+    # Download image from GCS
+    image_bytes = gcs_client.download_as_bytes(f"Images/{relevant_image['filename']}")
+    image64 = base64.b64encode(image_bytes).decode('utf-8')
 
     anwser = {
         "answer": anwser,
-        "relevant_image": relevant_image
+        "relevant_image": relevant_image,
+        "image64": image64
     }
 
     return anwser
