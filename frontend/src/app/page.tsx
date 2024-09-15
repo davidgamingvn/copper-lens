@@ -20,9 +20,12 @@ import {
 import { ThemeToggle } from "~/components/theme-toggle";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Label } from "~/components/ui/label";
+import { Spinner } from "~/components/ui/spinner";
 import Image from "next/image";
 import { useStore } from "./store";
-import { usePosts } from "./hooks/news";
+import { fetchPosts } from "./hooks/news";
+import { useQuery } from "@tanstack/react-query";
+import { type Post } from "~/lib/news";
 
 export default function Home() {
   const { posts, addMessage, initializePosts } = useStore();
@@ -36,7 +39,10 @@ export default function Home() {
     data: fetchedPosts,
     isLoading: isLoadingPosts,
     error: errorPosts,
-  } = usePosts();
+  } = useQuery<Post[]>({
+    queryKey: ["posts"],
+    queryFn: fetchPosts,
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -77,14 +83,6 @@ export default function Home() {
 
   if (!mounted) {
     return null;
-  }
-
-  if (isLoadingPosts) {
-    return <div>Loading...</div>;
-  }
-
-  if (errorPosts) {
-    return <div>Error loading data</div>;
   }
 
   return (
@@ -158,60 +156,66 @@ export default function Home() {
             </Card>
             <h2 className="mb-4 text-xl font-semibold">Latest News</h2>
             <ScrollArea className="h-[25rem] w-full">
-              {posts.map((item) => (
-                <Card key={item.id} className="mb-4 overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="flex items-center space-x-4 bg-accent p-4">
-                      <div className="flex-1">
-                        <h3 className="mb-2 font-semibold text-black">
-                          {item.name}
-                        </h3>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="secondary"
-                            className="bg-primary text-white"
-                            onClick={() => toggleNewsExpansion(item.id)}
-                          >
-                            {expandedNewsId === item.id
-                              ? "Hide Insight"
-                              : "View Insight"}
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            className="bg-secondary text-white"
-                          >
-                            Visit site
-                          </Button>
+              {isLoadingPosts ? (
+                <div className="flex h-full items-center justify-center">
+                  <Spinner size="large" className="text-white"/>
+                </div>
+              ) : (
+                posts.map((item) => (
+                  <Card key={item.id} className="mb-4 overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="flex items-center space-x-4 bg-accent p-4">
+                        <div className="flex-1">
+                          <h3 className="mb-2 font-semibold text-black">
+                            {item.name}
+                          </h3>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="secondary"
+                              className="bg-primary text-white"
+                              onClick={() => toggleNewsExpansion(item.id)}
+                            >
+                              {expandedNewsId === item.id
+                                ? "Hide Insight"
+                                : "View Insight"}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              className="bg-secondary text-white"
+                            >
+                              Visit site
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div
-                      className={`overflow-hidden bg-white transition-all duration-300 ease-in-out dark:bg-zinc-800 ${
-                        expandedNewsId === item.id
-                          ? "max-h-96 opacity-100"
-                          : "max-h-0 opacity-0"
-                      }`}
-                    >
-                      <div className="p-4">
-                        <ul className="list-disc space-y-2 pl-5">
-                          {item.text.map((point, index) => (
-                            <li key={index}>{point}</li>
-                          ))}
-                        </ul>
-                        <div className="flex justify-end">
-                          <Button
-                            variant="ghost"
-                            className="mr-2 flex items-center justify-center gap-1 hover:text-primary"
-                            onClick={() => toggleNewsExpansion(item.id)}
-                          >
-                            <ChevronUp />
-                          </Button>
+                      <div
+                        className={`overflow-hidden bg-white transition-all duration-300 ease-in-out dark:bg-zinc-800 ${
+                          expandedNewsId === item.id
+                            ? "max-h-96 opacity-100"
+                            : "max-h-0 opacity-0"
+                        }`}
+                      >
+                        <div className="p-4">
+                          <ul className="list-disc space-y-2 pl-5">
+                            {item.text.map((point, index) => (
+                              <li key={index}>{point}</li>
+                            ))}
+                          </ul>
+                          <div className="flex justify-end">
+                            <Button
+                              variant="ghost"
+                              className="mr-2 flex items-center justify-center gap-1 hover:text-primary"
+                              onClick={() => toggleNewsExpansion(item.id)}
+                            >
+                              <ChevronUp />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </ScrollArea>
           </div>
         </ResizablePanel>
