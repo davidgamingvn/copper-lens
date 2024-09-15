@@ -1,7 +1,8 @@
+import uuid
 import google.generativeai as genai
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains import ConversationalRetrievalChain
+from langchain.chains import ConversationalRetrievalChain, SimpleSequentialChain, SequentialChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
@@ -13,7 +14,7 @@ import base64
 from bs4 import BeautifulSoup
 from config import Config
 
-from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf, filter_text
+from .pdf_processing import extract_text_from_pdf, extract_images_from_pdf, update_bullets_json
 from .gcs_client import GCSClient
 from .pinecone_client import PineconeClient
 from spire.pdf.common import *
@@ -31,31 +32,31 @@ pinecone_client = PineconeClient(api_key=Config.PINECONE_API_KEY,
                                  index_name=Config.INDEX_NAME, model_name=Config.EMBEDDING_MODEL)
     
 
-# Initialize Pinecone PINECONE_API_KEY
-pinecone = Pinecone(api_key=Config.PINECONE_API_KEY)
+# # Initialize Pinecone PINECONE_API_KEY
+# pinecone = Pinecone(api_key=Config.PINECONE_API_KEY)
 
-# Set index name
-index_name = Config.INDEX_NAME
+# # Set index name
+# index_name = Config.INDEX_NAME
 
 # Embedding model
 embedding_model = GoogleGenerativeAIEmbeddings(model=Config.EMBEDDING_MODEL)
 
-# Create Index
-if index_name not in pinecone.list_indexes().names():
-    pinecone.create_index(
-        name=index_name,
-        dimension=768,
-        metric="cosine",
-        spec=ServerlessSpec(
-            cloud="aws",
-            region="us-east-1",
-        ))
+# # Create Index
+# if index_name not in pinecone.list_indexes().names():
+#     pinecone.create_index(
+#         name=index_name,
+#         dimension=768,
+#         metric="cosine",
+#         spec=ServerlessSpec(
+#             cloud="aws",
+#             region="us-east-1",
+#         ))
 
-# Initialize Pinecone index
-sparkchallenge_index = pinecone.Index(index_name)
-# Initialize Pinecone vector store
-vector_store = PineconeVectorStore(
-    index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
+# # Initialize Pinecone index
+# sparkchallenge_index = pinecone.Index(index_name)
+# # Initialize Pinecone vector store
+# vector_store = PineconeVectorStore(
+#     index=sparkchallenge_index, embedding=embedding_model, namespace="sparkchallenge")
 
 
 def generate_embeddings(text):
@@ -66,7 +67,6 @@ def generate_embeddings(text):
 
     # Generate embeddings for each chunk
     vectors = embedding_model.embed_documents(chunks)
-    print(len(vectors))
     print('finish embedding')
 
     return vectors, chunks
@@ -151,7 +151,7 @@ def get_qa_chain(question):
 
     # Initialize the conversational model
     model = ChatGoogleGenerativeAI(
-        model="gemini-1.5-pro", temperature=0.6, max_tokens=500
+        model="gemini-1.5-flash", temperature=0.6, max_tokens=500
     )
 
     # Initialize the conversational retrieval chain
@@ -187,6 +187,55 @@ def get_qa_chain(question):
     return anwser
 
 
+
+def filter_text(text):
+    # load the model
+    llm = ChatGoogleGenerativeAI(model='gemini-1.5-pro', temperature=0.4)
+
+    # set up a prompt for filter html tags
+    filter_prompt = PromptTemplate(
+        input_variables=['input'],
+        template=''' You are an AI assistant tasked with returning article from the given html by removing html tag and only return plain text.
+            You also need to remove any unrelated information like copyright, ads, etc.
+            You are given this html:"{input}".
+            I want to filter out only the article from the html.
+            Please filter out the article and return me with the article.
+        '''
+    )
+
+    # create a chain
+    filter_chain = LLMChain(llm=llm, prompt=filter_prompt, verbose=False, output_key='filter_text')
+
+    # set up promt for bullet points
+    bullet_prompt = PromptTemplate(
+        input_variables=['filter_text'],
+        template='''You are given this text:"{filter_text}".
+            I want to filter out only the most important information from the text.
+            Ignore any unnecessary details and provide me with a concise summary.
+            Please filter out the information and provide me with the filtered information.
+            Give me the filtered information in 3 bullet points without any introduction.
+        '''
+    )
+
+    # create a chain
+    bullet_chain = LLMChain(llm=llm, prompt=bullet_prompt, verbose=False, output_key='bullet_points')
+
+    # create sequence of chains
+    ss_chain = SequentialChain(chains=[filter_chain, bullet_chain],
+                               #multivariable
+                               input_variables=['input'],
+                               output_variables=['filter_text', 'bullet_points'])
+    # ss_chain = SimpleSequentialChain(chains=[filter_chain, bullet_chain])
+    
+    response = ss_chain.invoke(input=text)
+
+    bullet_points = response['bullet_points'].split('\n')
+    filtered_text = response['filter_text']
+
+    return filtered_text, bullet_points
+
+
+
 def remove_non_ascii(text):
     return ''.join(i for i in text if ord(i) < 128)
 
@@ -205,17 +254,17 @@ def web_scraping(url):
         # Remove non-ascii characters
         title = re.sub(r'[^\x00-\x7F]+', '', title)
         # Scrape the main content
-        tags = soup.find_all('div', {'class': 'main-content'})
+        tags = soup.find_all(['div', 'p', 'span'])
         text = ""
         for tag in tags:
             text = text + ' ' + tag.get_text(strip=True)
 
         # Filter through LLM to get relavanet information
-        text = filter_text(text)
+        text, bullet_points = filter_text(text)
 
+        # Generate embeddings for text
         vectors, chunks = generate_embeddings(text)
 
-        print(title)
         # Create upsert vector
         upsert_vectors = [
             {
@@ -230,9 +279,18 @@ def web_scraping(url):
             for i, (vector, chunk) in enumerate(zip(vectors, chunks))
         ]
 
-        sparkchallenge_index.upsert(
+        pinecone_client.index.upsert(
             vectors=upsert_vectors, namespace="sparkchallenge")
-        # print(sparkchallenge_index.describe_index_stats())
+        
+        # Update bullets json
+        new_bullets = {
+            "id": str(uuid.uuid4()),
+            "url": url,
+            "type": "article",
+            "name": title,
+            "text": [bullet_points[0], bullet_points[1], bullet_points[2]]
+        }
+        update_bullets_json([new_bullets], gcs_client)
 
         return f"Success Scraping: {response.status_code}"
     else:

@@ -4,6 +4,7 @@ import io
 
 bp = Blueprint('get_pdf', __name__)
 
+# /get_pdf?filename=example.pdf
 @bp.route('/get_pdf', methods=['GET'])
 def get_pdf():
     filename = request.args.get('filename')

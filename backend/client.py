@@ -61,7 +61,7 @@ def ask_question(question):
 
 
 def web_scapper(job_url):
-    url = f"{SERVER_URL}/scrape"
+    url = f"{SERVER_URL}/scrape_web"
     data = {"url": job_url}
     print(data)
 
