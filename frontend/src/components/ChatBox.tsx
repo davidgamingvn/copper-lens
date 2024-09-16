@@ -44,7 +44,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
         const nextChar = messageRef.current[prev.length];
         timeoutRef.current = setTimeout(() => {
           streamMessage();
-        }, 150);
+        }, 80);
         return prev + nextChar;
       } else {
         setIsStreaming(false);

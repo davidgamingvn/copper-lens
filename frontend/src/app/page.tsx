@@ -19,11 +19,17 @@ import {
 } from "~/components/ui/resizable";
 import { ThemeToggle } from "~/components/theme-toggle";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { useToast } from "~/hooks/use-toast";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "~/components/ui/hover-card";
+import {
+  Alert,
+} from "~/components/ui/alert"
 import { Label } from "~/components/ui/label";
 import { Spinner } from "~/components/ui/spinner";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
 import { useStore } from "./store";
-import { usePosts } from "./hooks/news";
+import { usePosts, useUploadFile, useDownloadFile, useUploadArticle } from "./hooks/news";
 import ArticlePreview from "~/components/ArticlePreview";
 
 export default function Home() {
@@ -33,12 +39,12 @@ export default function Home() {
   const isLargeScreen = useMediaQuery({ query: "(min-width: 1024px)" });
   const [expandedNewsId, setExpandedNewsId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [link, setLink] = useState<string>("");
+    const [articleUrl, setArticleUrl] = useState("");
+
 
   const {
     data: fetchedPosts,
     isLoading: isLoadingPosts,
-    error: errorPosts,
   } = usePosts();
 
   useEffect(() => {
@@ -51,16 +57,51 @@ export default function Home() {
     }
   }, [fetchedPosts, initializePosts]);
 
+  const { mutate: uploadFile, isPending: uploadFilePending, isError: uploadFileError } = useUploadFile();
+  const { mutate: uploadArticle, isPending: uploadArticlePending, isError: uploadArticleError } = useUploadArticle();
+  const { mutate: downloadFile } = useDownloadFile();
+  const { toast } = useToast()
+
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      // addMessage(`File uploaded: ${file.name}`);
+      uploadFile(file, {
+        onSuccess: () => {
+          toast({
+            title: "Success",
+            description: `File uploaded successfully: ${file.name}`,
+          });
+        },
+        onError: (error) => {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Failed to upload file: ${error.message}`,
+          });
+        },
+      });
     }
   };
 
-  const handleLink = () => {
-    setLink(link);
+
+  const handleArticleUpload = () => {
+    uploadArticle(articleUrl, {
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: `Article uploaded successfully: ${articleUrl}`,
+        });
+      },
+      onError: (error) => {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: `Failed to upload article: ${error.message}`,
+        });
+      },
+    });
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -74,7 +115,21 @@ export default function Home() {
     const file = e.dataTransfer.files?.[0];
     if (file) {
       setUploadedFile(file);
-      // addMessage(`File uploaded: ${file.name}`);
+      uploadFile(file, {
+        onSuccess: () => {
+          toast({
+            title: "Success",
+            description: `File uploaded successfully: ${file.name}`,
+          });
+        },
+        onError: (error) => {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Failed to upload file: ${error.message}`,
+          });
+        },
+      });
     }
   };
 
@@ -136,7 +191,18 @@ export default function Home() {
                     </div>
                   </Label>
                 </div>
-                {uploadedFile && (
+                {uploadFilePending && (
+                  <div className="flex justify-center mt-2 gap-2">
+                    <Spinner size="small" />
+                    <p> Uploading... </p>
+                  </div>
+                )}
+                {uploadFileError && (
+                  <Alert variant="destructive" className="mt-2 text-lg text-red">
+                    {uploadFileError}
+                  </Alert>
+                )}
+                {uploadedFile && !uploadFilePending && !uploadFileError && (
                   <p className="mt-2 text-sm text-gray-500">
                     Uploaded file: {uploadedFile.name}
                   </p>
@@ -148,15 +214,28 @@ export default function Home() {
                   <Input
                     placeholder="Paste link here"
                     className="mr-2 flex-1 dark:border-muted-foreground"
+                    value={articleUrl}
+                    onChange={(e) => setArticleUrl(e.target.value)}
                   />
-                  <Button size="icon">
+                  <Button size="icon" onClick={handleArticleUpload}>
                     <ArrowRight className="h-4 w-4 text-white" />
                   </Button>
                 </div>
+                {uploadArticlePending && (
+                  <div className="flex justify-center mt-2 gap-2">
+                    <Spinner size="small" />
+                    <p> Uploading article... </p>
+                  </div>
+                )}
+                {uploadArticleError && (
+                  <Alert variant="destructive" className="mt-2 text-lg text-red">
+                    {uploadArticleError}
+                  </Alert>
+                )}
               </CardContent>
             </Card>
             <h2 className="mb-4 text-xl font-semibold">Latest News</h2>
-            <ScrollArea className="h-[25rem] w-full">
+            <ScrollArea className="h-[50rem] w-full">
               {isLoadingPosts ? (
                 <div className="flex h-full items-center justify-center">
                   <Spinner
@@ -186,25 +265,26 @@ export default function Home() {
                                 : "View Insight"}
                             </Button>
                             {item.type === "article" && item.url && (
-                              <Popover>
-                                <PopoverTrigger asChild>
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
                                   <Button
                                     variant="secondary"
                                     className="bg-secondary text-white"
+                                    onClick={() => window.open(item.url, "_blank")}
                                   >
                                     Visit site
                                   </Button>
-                                </PopoverTrigger>
-                                <PopoverContent>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="bg-transparent border-none shadow-none">
                                   <ArticlePreview url={item.url} />
-                                </PopoverContent>
-                              </Popover>
+                                </HoverCardContent>
+                              </HoverCard>
                             )}
-                            {item.type === "pdf" && item.url && (
+                            {item.type === "pdf" && (
                               <Button
                                 variant="secondary"
                                 className="bg-secondary text-white"
-                                onClick={() => window.open(item.url, "_blank")}
+                                onClick={() => downloadFile({ filename: item.name })}
                               >
                                 Download document
                               </Button>
@@ -213,16 +293,18 @@ export default function Home() {
                         </div>
                       </div>
                       <div
-                        className={`overflow-hidden bg-white transition-all duration-300 ease-in-out dark:bg-zinc-800 ${
-                          expandedNewsId === item.id
-                            ? "max-h-96 opacity-100"
-                            : "max-h-0 opacity-0"
-                        }`}
+                        className={`overflow-hidden bg-white transition-all duration-300 ease-in-out dark:bg-zinc-800 ${expandedNewsId === item.id
+                          ? "max-h-96 opacity-100"
+                          : "max-h-0 opacity-0"
+                          }`}
                       >
                         <div className="p-4">
                           <ul className="list-disc space-y-2 pl-5">
                             {item.text.map((point, index) => (
-                              <li key={index}>{point}</li>
+                              <li key={index}>
+                                <ReactMarkdown>
+                                  {point}
+                                </ReactMarkdown></li>
                             ))}
                           </ul>
                           <div className="flex justify-end">

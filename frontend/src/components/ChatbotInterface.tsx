@@ -15,16 +15,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { formatFileSize } from "~/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "~/app/store";
 import ChatBox from "./ChatBox";
 import { useChatQuery } from "~/app/hooks/news";
+import { useUploadFile } from "~/app/hooks/news";
+import { useToast } from "~/hooks/use-toast";
 import { type ChatMessage } from "../lib/index";
 
 const ChatbotInterface: React.FC = () => {
   const { chatMessages, addMessage, clearMessages } = useStore();
   const [inputMessage, setInputMessage] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { theme } = useTheme();
   const logo =
     theme === "dark"
@@ -33,6 +35,9 @@ const ChatbotInterface: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatQuery = useChatQuery();
+
+  const { mutate: uploadFile } = useUploadFile();
+  const { toast } = useToast()
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,9 +51,22 @@ const ChatbotInterface: React.FC = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      addMessage({
-        text: `File uploaded: ${file.name} (${formatFileSize(file.size)})`,
-      } as ChatMessage);
+      setUploadedFile(file);
+      uploadFile(file, {
+        onSuccess: () => {
+          toast({
+            title: "Success",
+            description: `File uploaded successfully: ${file.name}`,
+          });
+        },
+        onError: (error) => {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Failed to upload file: ${error.message}`,
+          });
+        },
+      });
     }
   };
 
