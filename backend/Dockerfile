@@ -20,7 +20,7 @@ COPY . .
 # RUN rm -f .env credentials.json
 
 # Expose the port that the Flask app runs on
-EXPOSE 3001
+EXPOSE 5000
 
 # Set environment variables
 ENV FLASK_APP=main.py
