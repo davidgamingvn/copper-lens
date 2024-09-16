@@ -1,6 +1,6 @@
 ## PUBLIC
 
-**We have hosted the app locally, and you can access it [here](https://sparkchallenge-nextjs-frontend-583938538589.us-central1.run.app/)**
+**We have hosted the app on GCP, and you can access it [here](https://sparkchallenge-nextjs-frontend-583938538589.us-central1.run.app/)**
 
 ## HOSTING LOCALLY
 
