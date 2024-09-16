@@ -172,7 +172,15 @@ def get_qa_chain(question):
     anwser = response['answer']
 
     # relevant_image = {pagecontent, metadata}
-    relevant_image = pinecone_client.get_relevant_image(anwser)
+    embeded_ans = embedding_model.embed_documents([anwser])
+    relevant_image = pinecone_client.get_relevant_image(embeded_ans)
+
+    if relevant_image is None:
+        return {
+            "answer": anwser,
+            "relevant_image": None,
+            "image64": None
+        }
     
     # Download image from GCS
     image_bytes = gcs_client.download_as_bytes(f"Images/{relevant_image['filename']}")

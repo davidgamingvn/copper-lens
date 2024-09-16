@@ -34,8 +34,16 @@ class PineconeClient:
         return PineconeVectorStore(
             index=self.index, embedding=embedding_model, namespace=namespace)
     
-    def get_relevant_image(self, query, top_k=5):
+    def get_relevant_image(self, query, top_k=5, threshold=0.8):
         # return self.index.query(queries=[query], top_k=top_k)
-        results = self.image_vectors.similarity_search(query, k=top_k, namespace=self.image_namespace)
-        # print(results[0].metadata)
-        return results[0].metadata if results else None
+        results = self.index.query(vector=query, top_k=top_k, namespace=self.image_namespace, include_values=True, include_metadata=True)
+        # print(results)
+        # filtered_results = [result for result in results if result.metadata.get('score', 0) >= threshold]
+        filtered_results = [result for result in results['matches'] if result['score'] >= threshold]
+        # Find the result with the highest score
+        if filtered_results:
+            highest_score_result = max(filtered_results, key=lambda x: x['score'])
+            
+            # Extract information from the highest-scoring result
+            return highest_score_result['metadata'] if highest_score_result else None
+        return None

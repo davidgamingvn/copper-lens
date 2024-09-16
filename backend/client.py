@@ -4,7 +4,7 @@ import os
 
 # Replace with your server's URL
 # SERVER_URL = "http://localhost:8000"
-SERVER_URL = "http://127.0.0.1:5000"
+SERVER_URL = "https://sparkchallenge-flask-backend-583938538589.us-central1.run.app"
 
 
 def upload_pdf(file_path):
